@@ -10,7 +10,7 @@ CC = g++
 INCLUDE = -I$(V8_ROOT_DIR)/include
 LIBDIR = -L$(V8_ROOT_DIR)/out.gn/arm64.release.sample/obj
 LIBS = -lv8_monolith -pthread -ldl
-OS_SPECIFIC_LIBS = -framework CoreFoundation -framework CoreServices -framework CoreAudio -framework AudioUnit
+OS_SPECIFIC_LIBS = -framework CoreFoundation -framework CoreAudio -framework AudioUnit
 V8_FLAGS = -DV8_COMPRESS_POINTERS -DV8_ENABLE_SANDBOX
 APP = otojsd
 
