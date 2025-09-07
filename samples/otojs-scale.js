@@ -19,14 +19,16 @@ function create_osc(scales, step_offset, pan, amplitude) {
         let v = Math.sin( 3.1415 * 2 * frame * freq / sample_rate );
         let envelope = (1 - elapsed / frames_16th);
         let amp = amplitude * envelope;
-		return [v * amp * pan, v * amp * (1 - pan)];
+        pan_amp = 0.5 + 0.5 * Math.sin(pan);
+        pan += Math.PI * 2 / (10 * sample_rate);
+		return [v * amp * pan_amp, v * amp * (1 - pan_amp)];
     }
 }
 
-var osc1 = create_osc(create_frequency_scale(-29), 8, -0.8, 0.3);
-var osc2 = create_osc(create_frequency_scale(-48), 0, -0.3, 0.5);
-var osc3 = create_osc(create_frequency_scale(-41), 4,  0.3, 0.5);
-var osc4 = create_osc(create_frequency_scale(-36), 12, 0.8, 0.3);
+var osc1 = create_osc(create_frequency_scale(-29),  8, Math.PI *   0, 0.3);
+var osc2 = create_osc(create_frequency_scale(-48),  0, Math.PI * 0.5, 0.3);
+var osc3 = create_osc(create_frequency_scale(-41),  4, Math.PI * 1.0, 0.3);
+var osc4 = create_osc(create_frequency_scale(-36), 12, Math.PI * 1.5, 0.3);
 
 function create_delay(length, feedback) {
     let delay = [];
