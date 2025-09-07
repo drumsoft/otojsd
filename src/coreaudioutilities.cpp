@@ -51,7 +51,7 @@ void setSamplingRateToDevice(AudioObjectID objectID, Float64 samplingRate) {
 	AudioObjectPropertyAddress address = {
 		kAudioDevicePropertyNominalSampleRate,
 		kAudioObjectPropertyScopeGlobal,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 	OSErr err = AudioObjectSetPropertyData(objectID, &address, 0, NULL, size, &samplingRate);
 	if (err) {
@@ -67,7 +67,7 @@ AudioObjectID getDefaultDeviceID(bool isInput) {
 	AudioObjectPropertyAddress address = {
 		isInput ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice,
 		kAudioObjectPropertyScopeGlobal,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 	OSErr err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, NULL, &size, &result);
 	if (err) {
@@ -136,7 +136,7 @@ CFDictionaryRef getAudioSubDeviceDescription(AudioObjectID objectID, int channel
 	
 	AudioObjectPropertyAddress address = {  kAudioDevicePropertyDeviceUID,
 											kAudioObjectPropertyScopeGlobal,
-											kAudioObjectPropertyElementMaster };
+											kAudioObjectPropertyElementMain };
 	CFStringRef deviceUID;
 	size = sizeof(deviceUID);
 	err = AudioObjectGetPropertyData(objectID, &address, 0, NULL, &size, &deviceUID);

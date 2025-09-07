@@ -23,11 +23,11 @@
 typedef struct {
 	int port;
 	bool findfreeport;
-	char *allow_pattern;
+	const char *allow_pattern;
 	int channel;
 	int sample_rate;
 	bool verbose;
-	char *output;
+	const char *output;
 	bool enable_input;
 } otojsd_options;
 

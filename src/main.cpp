@@ -48,6 +48,7 @@ int main(int argc, char **argv, char **env) {
 	otojsd_options options = OTOJSD_OPTIONS_DEFAULTS;
 
 	int result, length;
+	char *buf;
 	while( (result = getopt_long(argc, argv, options_short, options_long, NULL)) != -1 ){
 		switch(result){
 			case 'p':
@@ -72,15 +73,17 @@ int main(int argc, char **argv, char **env) {
 				length = strlen(optarg);
 				if ( length <= 0 || 39 < length)
 					die("-a, --allow parameter is like '192.168.1.3' or '192.168.2.0/255.255.255.0'.");
-				options.allow_pattern = (char *)malloc(length+1);
-				if ( ! options.allow_pattern ) die( "malloc faild (options.allow)." );
-				strcpy(options.allow_pattern, optarg);
+				buf = (char *)malloc(length+1);
+				if (!buf) die( "malloc faild (options.allow)." );
+				strcpy(buf, optarg);
+				options.allow_pattern = buf;
 				break;
 			case 'o':
 				length = strlen(optarg);
-				options.output = (char *)malloc(length+1);
-				if ( ! options.output ) die( "malloc faild (options.output)." );
-				strcpy(options.output, optarg);
+				buf = (char *)malloc(length+1);
+				if (!buf) die( "malloc faild (options.output)." );
+				strcpy(buf, optarg);
+				options.output = buf;
 				break;
 			case 'i':
 				options.enable_input = true;
@@ -99,10 +102,10 @@ long options_integer(const char *arg, long min, long max, const char *text) {
 	long number = strtol(arg, &err, 0);
 	
 	if (*err != '\0') {
-		sprintf(errortext, "%s parameter must be a number.", text);
+		snprintf(errortext, 256, "%s parameter must be a number.", text);
 		die(errortext);
 	}else if( number < min || max < number ) {
-		sprintf(errortext, "%s parameter must be in %ld - %ld.", text, min, max);
+		snprintf(errortext, 256, "%s parameter must be in %ld - %ld.", text, min, max);
 		die(errortext);
 	}
 	return number;

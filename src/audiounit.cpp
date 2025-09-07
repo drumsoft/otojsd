@@ -51,7 +51,7 @@ void CloseDefaultAU();
 
 const UInt32 theFormatID = kAudioFormatLinearPCM;
 // these are set based on which format is chosen
-const UInt32 theFormatFlags = kAudioFormatFlagsNativeFloatPacked | kAudioFormatFlagIsNonInterleaved;
+const UInt32 theFormatFlags = (AudioFormatFlags)kAudioFormatFlagsNativeFloatPacked | (AudioFormatFlags)kAudioFormatFlagIsNonInterleaved;
 const UInt32 theBytesInAPacket = 4;
 const UInt32 theBitsPerChannel = 32;
 const UInt32 theBytesPerFrame = 4;

@@ -162,7 +162,7 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 		}
 	}
 
-	delete inoutbuf;
+	delete[] inoutbuf;
 	
 	pthread_mutex_unlock( &mutex_for_script_engine );
 	pthread_cond_signal( &cond_for_script_engine );

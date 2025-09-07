@@ -32,7 +32,7 @@
 
 // -------------------------------------------------------- private function
 
-void codeserver__error(codeserver *self, char *err);
+void codeserver__error(codeserver *self, const char *err);
 bool codeserver__decode_ipaddr(char *str, unsigned char *addr, unsigned char *mask);
 bool codeserver__check_client_ip( codeserver *self, struct sockaddr_in *client);
 void codeserver__write_port_file( codeserver *self, const char *path, int port );
@@ -235,7 +235,7 @@ bool codeserver_run(codeserver *self) {
 	return true;
 }
 
-void codeserver__error(codeserver *self, char *err) {
+void codeserver__error(codeserver *self, const char *err) {
 	(void)self;
 	perror(err);
 }
