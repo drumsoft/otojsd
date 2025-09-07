@@ -4,6 +4,11 @@ project(otojsd LANGUAGES CXX)
 # V8 build root directory: should be set by -DV8_ROOT_DIR=/path/to/v8
 set(V8_ROOT_DIR "$ENV{HOME}/v8" CACHE PATH "Path to V8 build root")
 
+# output path for signed application
+set(SIGNED_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/release")
+# code signing identity
+set(CODESIGN_IDENTITY "Developer ID Application" CACHE STRING "Code signing identity for macOS codesign")
+
 # name of the application
 set(APP otojsd)
 
@@ -51,4 +56,15 @@ add_custom_target(run
   COMMAND "${CMAKE_BINARY_DIR}/${APP}"
   DEPENDS ${APP}
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
+# sign and copy to release/ target
+add_custom_target(sign
+  COMMAND codesign --sign "${CODESIGN_IDENTITY}" --timestamp "${CMAKE_BINARY_DIR}/${APP}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${SIGNED_OUTPUT_DIR}"
+  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${APP}" "${SIGNED_OUTPUT_DIR}/${APP}"
+  DEPENDS ${APP}
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  COMMENT "Code signing ${APP} and copying to release/"
+  VERBATIM
 )

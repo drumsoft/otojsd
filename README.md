@@ -28,7 +28,7 @@ You can generate these sound using JavaScript. Leveraging V8's speed, you should
 Start otojsd.
 
 ```
-otojsd
+release/otojsd
 ```
 
 otojsd supports all launch options from [otoperld](https://github.com/drumsoft/OtoPerl) (it should).
@@ -153,4 +153,8 @@ build.
 cmake --build build
 ```
 
-If `build/otojsd` is created, you're done.
+run.
+
+```
+build/otojsd
+```
