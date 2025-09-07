@@ -1,6 +1,4 @@
 let frame = 0;
-let sample_rate = 44100;
-let channel = 2;
 
 function oto_render(frames, channels, input_array) {
 	let output = new Float32Array(frames * channels);

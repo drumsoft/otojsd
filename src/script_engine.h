@@ -58,6 +58,9 @@ public:
 
     // Call the render function with the given input buffer and return the output samples.
     RenderResult executeRender(float *inoutbuf, unsigned int frames, unsigned int channels);
+
+    // Set global variable.
+    void setGlobalVariable(const char *name, double value);
 };
 
 #endif

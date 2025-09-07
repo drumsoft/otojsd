@@ -71,6 +71,7 @@ void otojsd_start(otojsd_options *options, const char *exec_path, char **env) {
 	pthread_cond_init( &cond_for_script_engine, NULL );
 
 	se = new ScriptEngine(exec_path);
+	se->setGlobalVariable("sample_rate", options->sample_rate);
 	se->executeFromFile(start_code);
 
 	has_runtime_error = false;

@@ -179,6 +179,18 @@ RenderResult ScriptEngine::executeRender(float *inoutbuf, unsigned int frames, u
     return result;
 }
 
+// Set global variable.
+void ScriptEngine::setGlobalVariable(const char *name, double value) {
+    v8::Isolate::Scope isolate_scope(this->isolate_);
+    v8::HandleScope handle_scope(this->isolate_);
+    v8::Local<v8::Context> local_context = this->context_.Get(this->isolate_);
+    v8::Context::Scope context_scope(local_context);
+
+    v8::Local<v8::String> var_name = v8::String::NewFromUtf8(this->isolate_, name).ToLocalChecked();
+    v8::Local<v8::Number> var_value = v8::Number::New(this->isolate_, value);
+    local_context->Global()->Set(local_context, var_name, var_value).FromJust();
+}
+
 // -------------------- internal functions
 
 // Extracts a C string from a V8 Utf8Value.
