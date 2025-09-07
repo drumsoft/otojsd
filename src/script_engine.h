@@ -21,7 +21,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <CoreFoundation/CoreFoundation.h>
 #include <libplatform/libplatform.h>
 #include <v8.h>
 
@@ -58,7 +57,7 @@ public:
     const char *executeFromFile(const char *filename);
 
     // Call the render function with the given input buffer and return the output samples.
-    RenderResult executeRender(Float32 *inoutbuf, UInt32 frames, UInt32 channels);
+    RenderResult executeRender(float *inoutbuf, unsigned int frames, unsigned int channels);
 };
 
 #endif

@@ -126,7 +126,7 @@ const char *ScriptEngine::executeFromFile(const char *filename) {
 }
 
 // Call the render function with the given input buffer and return the output samples.
-RenderResult ScriptEngine::executeRender(Float32 *inoutbuf, UInt32 frames, UInt32 channels) {
+RenderResult ScriptEngine::executeRender(float *inoutbuf, unsigned int frames, unsigned int channels) {
     RenderResult result = {0, nullptr};
 
     v8::Isolate::Scope isolate_scope(this->isolate_);
@@ -143,7 +143,7 @@ RenderResult ScriptEngine::executeRender(Float32 *inoutbuf, UInt32 frames, UInt3
     v8::Local<v8::Float32Array> input_array;
     v8::Local<v8::Primitive> undefined = v8::Undefined(this->isolate_);
     if (inoutbuf) {
-        size_t byte_length = frames * channels * sizeof(Float32);
+        size_t byte_length = frames * channels * sizeof(float);
         v8::Local<v8::ArrayBuffer> array_buffer = v8::ArrayBuffer::New(isolate_, byte_length);
         void* buffer_data = array_buffer->GetBackingStore()->Data();
         memcpy(buffer_data, inoutbuf, byte_length);
@@ -173,7 +173,7 @@ RenderResult ScriptEngine::executeRender(Float32 *inoutbuf, UInt32 frames, UInt3
     // copy result to inoutbuf
     v8::Local<v8::Float32Array> ret_array = call_result.As<v8::Float32Array>();
     std::shared_ptr<v8::BackingStore> backing = ret_array->Buffer()->GetBackingStore();
-    memcpy(inoutbuf, static_cast<Float32 *>(backing->Data()), ret_array->Length() * sizeof(Float32));
+    memcpy(inoutbuf, static_cast<float *>(backing->Data()), ret_array->Length() * sizeof(float));
     result.count = ret_array->Length();
 
     return result;
