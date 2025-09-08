@@ -70,8 +70,8 @@ AudioObjectID getDefaultDeviceID(bool isInput) {
 		kAudioObjectPropertyElementMain
 	};
 	OSErr err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, NULL, &size, &result);
-	if (err) {
-		printf ("input device not found. (%4.4s, %ld)\n", (char*)&err, (long int)err);
+	if (err != noErr) {
+		printf ("%s device not found. (%4.4s, %ld)\n", isInput ? "input" : "output", (char*)&err, (long int)err);
 		exit(-1);
 	}
 	return result;
@@ -90,32 +90,34 @@ AudioObjectID getInputOutputDevice(AudioObjectID inputDevice, AudioObjectID outp
 	CFNumberRef falseRef = CFNumberFromInt(0);
 	CFDictionaryRef inputDeviceDescription  = getAudioSubDeviceDescription(inputDevice, channels, 0, 0);
 	CFDictionaryRef outputDeviceDescription = getAudioSubDeviceDescription(outputDevice, 0, channels, 1);
-	void * keys[6] = {
-		(void *)CFSTR(kAudioAggregateDeviceUIDKey),
-		(void *)CFSTR(kAudioAggregateDeviceNameKey),
-		(void *)CFSTR(kAudioAggregateDeviceSubDeviceListKey),
-		(void *)CFSTR(kAudioAggregateDeviceMasterSubDeviceKey),
-		(void *)CFSTR(kAudioAggregateDeviceIsPrivateKey),
-		(void *)CFSTR(kAudioAggregateDeviceIsStackedKey)
+	const void * keys[6] = {
+		CFSTR(kAudioAggregateDeviceUIDKey),
+		CFSTR(kAudioAggregateDeviceNameKey),
+		CFSTR(kAudioAggregateDeviceSubDeviceListKey),
+		CFSTR(kAudioAggregateDeviceMasterSubDeviceKey),
+		CFSTR(kAudioAggregateDeviceIsPrivateKey),
+		CFSTR(kAudioAggregateDeviceIsStackedKey)
 	};
-	void * list[2] = {
-		(void *)inputDeviceDescription,
-		(void *)outputDeviceDescription
+	const void * list[2] = {
+		inputDeviceDescription,
+		outputDeviceDescription
 	};
-	CFArrayRef subDeviceList = CFArrayCreate(NULL, (const void **)list, 2, &kCFTypeArrayCallBacks);
+	CFArrayRef subDeviceList = CFArrayCreate(NULL, list, 2, &kCFTypeArrayCallBacks);
 	assert(subDeviceList != NULL);
-	void * values[6] = {
-		(void *)CFSTR(AGGREGATED_DEVICE_UID), // UID
-		(void *)CFSTR(AGGREGATED_DEVICE_NAME), // Name
-		(void *)subDeviceList,
-		(void *)CFDictionaryGetValue(inputDeviceDescription, CFSTR(kAudioSubDeviceUIDKey)), // MasterSubDeviceUID
-		(void *)trueRef, // isPrivate
-		(void *)falseRef // isStacked
+	CFStringRef masterSubDeviceUID = (CFStringRef)CFDictionaryGetValue(inputDeviceDescription, CFSTR(kAudioSubDeviceUIDKey));
+	assert(masterSubDeviceUID != NULL);
+	const void * values[6] = {
+		CFSTR(AGGREGATED_DEVICE_UID), // UID
+		CFSTR(AGGREGATED_DEVICE_NAME), // Name
+		subDeviceList,
+		masterSubDeviceUID,
+		trueRef, // isPrivate
+		falseRef // isStacked
 	};
 	CFDictionaryRef inDescription = CFDictionaryCreate (NULL,
-			(const void **)keys,
-			(const void **)values,
-			(CFIndex)6,
+			keys,
+			values,
+			6,
 			&kCFTypeDictionaryKeyCallBacks,
 			&kCFTypeDictionaryValueCallBacks);
 	assert(inDescription != NULL);
@@ -152,22 +154,22 @@ CFDictionaryRef getAudioSubDeviceDescription(AudioObjectID objectID, int channel
 	CFNumberRef out = CFNumberFromInt(channelsOut);
 	CFNumberRef cDrift = CFNumberFromInt(compensateDrift);
 	
-	void * keys[5] = {
-		(void *)CFSTR(kAudioSubDeviceUIDKey),
-		(void *)CFSTR(kAudioSubDeviceNameKey),
-		(void *)CFSTR(kAudioSubDeviceInputChannelsKey),
-		(void *)CFSTR(kAudioSubDeviceOutputChannelsKey),
-		(void *)CFSTR(kAudioSubDeviceDriftCompensationKey)
+	const void * keys[5] = {
+		CFSTR(kAudioSubDeviceUIDKey),
+		CFSTR(kAudioSubDeviceNameKey),
+		CFSTR(kAudioSubDeviceInputChannelsKey),
+		CFSTR(kAudioSubDeviceOutputChannelsKey),
+		CFSTR(kAudioSubDeviceDriftCompensationKey)
 	};
-	void * values[5] = {
-		(void *)deviceUID,
-		(void *)deviceName,
-		(void *)in,
-		(void *)out,
-		(void *)cDrift
+	const void * values[5] = {
+		deviceUID,
+		deviceName,
+		in,
+		out,
+		cDrift
 	};
 	CFDictionaryRef result = CFDictionaryCreate(NULL,
-			(const void **)keys, (const void **)values, (CFIndex)5,
+			keys, values, 5,
 			&kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
 	assert(result != NULL);
 	CFRelease(deviceUID);
