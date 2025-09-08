@@ -1,0 +1,23 @@
+{
+    "tasks": [
+        {
+            "type": "process",
+            "label": "build",
+            "command": "cmake",
+            "args": [
+                "--build", "build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+        }
+    ],
+    "version": "2.0.0"
+}
