@@ -102,7 +102,7 @@ AudioObjectID getInputOutputDevice(AudioObjectID inputDevice, AudioObjectID outp
 		(void *)inputDeviceDescription,
 		(void *)outputDeviceDescription
 	};
-	CFArrayRef subDeviceList = CFArrayCreate(NULL, (const void **)list, 2, NULL);
+	CFArrayRef subDeviceList = CFArrayCreate(NULL, (const void **)list, 2, &kCFTypeArrayCallBacks);
 	assert(subDeviceList != NULL);
 	void * values[6] = {
 		(void *)CFSTR(AGGREGATED_DEVICE_UID), // UID
@@ -116,8 +116,8 @@ AudioObjectID getInputOutputDevice(AudioObjectID inputDevice, AudioObjectID outp
 			(const void **)keys,
 			(const void **)values,
 			(CFIndex)6,
-			NULL,
-			NULL);
+			&kCFTypeDictionaryKeyCallBacks,
+			&kCFTypeDictionaryValueCallBacks);
 	assert(inDescription != NULL);
 	err = AudioHardwareCreateAggregateDevice(inDescription, &aggregatedDevice);
 	NOERR(err, "AudioHardwareCreateAggregateDevice", 0);
@@ -168,7 +168,7 @@ CFDictionaryRef getAudioSubDeviceDescription(AudioObjectID objectID, int channel
 	};
 	CFDictionaryRef result = CFDictionaryCreate(NULL,
 			(const void **)keys, (const void **)values, (CFIndex)5,
-			NULL, NULL);
+			&kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
 	assert(result != NULL);
 	CFRelease(deviceUID);
 	CFRelease(deviceName);
