@@ -44,6 +44,6 @@ typedef struct {
 	false\
 }
 
-void otojsd_start(otojsd_options *options, const char *exec_path, char **env);
+void otojsd_start(otojsd_options *options, const char *start_code, const char *exec_path, char **env);
 
 #endif

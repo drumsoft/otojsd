@@ -26,7 +26,6 @@
 
 #include "otojsd.h"
 #include "script_engine.h"
-#include "const.h"
 #include "codeserver.h"
 #include "audiounit.h"
 #include "aiffrecorder.h"
@@ -53,8 +52,7 @@ bool has_runtime_error;
 
 bool input_enabled;
 
-void otojsd_start(otojsd_options *options, const char *exec_path, char **env) {
-	const char *start_code = OTOJSD_DEFAULT_STARTCODE;
+void otojsd_start(otojsd_options *options, const char *start_code, const char *exec_path, char **env) {
 	logger::log(std::format("otojsd - Otojs sound server - start with {}.", start_code));
 	logger::log(std::format("otojsd port: {}, allowed clients: {}.", options->port, options->allow_pattern));
 	if (strcmp(options->allow_pattern, OTOJSD_DEFAULT_IPMASK) != 0) {

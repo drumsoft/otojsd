@@ -22,7 +22,9 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdio.h>
+
 #include "otojsd.h"
+#include "const.h"
 
 const char options_short[] = "p:fvc:r:a:o:i";
 const struct option options_long[] = {
@@ -91,7 +93,9 @@ int main(int argc, char **argv, char **env) {
 		}
 	}
 
-	otojsd_start(&options, argv[0], env);
+	const char *start_code = optind < argc ? argv[optind] : OTOJSD_DEFAULT_STARTCODE;
+
+	otojsd_start(&options, start_code, argv[0], env);
 	return 0;
 }
 
