@@ -31,9 +31,7 @@ Start otojsd.
 release/otojsd
 ```
 
-otojsd supports all launch options from [otoperld](https://github.com/drumsoft/OtoPerl) (it should).
-
-When you send JavaScript code to otojsd, it compiles the code and uses it for sound generation.
+otojsd will start and listen 14609 (default port). When you send JavaScript code to otojsd, it compiles the code and uses it for sound generation.
 
 ```
 curl -X POST http://localhost:14609/ --data-binary @samples/otojs-sample.js
@@ -78,6 +76,26 @@ function oto_render(frames, channels, input_array) {
 ```
 
 Please also check the examples in the samples directory.
+
+## launch options
+
+otojsd supports all launch options from [otoperld](https://github.com/drumsoft/OtoPerl) (it should).
+
+```
+otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_number] [-i] [filename]
+ -v, --verbose       be verbose.
+ -c, --channel 2     Number of channels OtoPerl generate. default is 2.
+ -r, --rate 48000    Sampling rate of the sound OtoPerl generate. default is 48000.
+ -a, --allow 192.168 Host address pattern allowed to access otoperld. default is 127.0.0.1
+                     ex: 192.168.0.8 (1 host allowed, = 192.168.0.8/255.255.255.255)
+                         192.168.1.0/255.255.252.0 (22 bit netmask)
+                         192.168 (16 bit netmask, = 192.168.0.0/255.255.0.0)
+ -p, --port 99999    Port number to listen. default is 14609.
+ -f, --findfreeport  Find free port when it's already used. The found port will be put in file '.otoperld_port'.
+ -o, --output x.aiff Record sounds to specified file.
+ -i, --enable-input  Enables an audio input (from Default Input Device)
+ filename            OtoPerl script ran when server launched. default is 'otojsd-start.js'.
+```
 
 ## build instruction
 
