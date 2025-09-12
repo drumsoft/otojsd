@@ -97,12 +97,12 @@ codeserver *codeserver_init(int port, bool findfreeport, const char *c_allow, bo
 	return self;
 }
 
-void codeserver_start(codeserver *self) {
+bool codeserver_start(codeserver *self) {
 	struct sockaddr_in saddr;
 	unsigned int sockaddr_in_size = sizeof(struct sockaddr_in);
 	
 	if ((self->listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		codeserver__error(self, "socket failed."); return;
+		codeserver__error(self, "socket failed."); return false;
 	}
 	
 	bzero((char *)&saddr, sizeof(saddr));
@@ -118,14 +118,15 @@ void codeserver_start(codeserver *self) {
 		codeserver__write_port_file(self, PORTFILENAME, self->port);
 	} else {
 		if (bind(self->listen_fd, (struct sockaddr *)&saddr, sockaddr_in_size) < 0) {
-			codeserver__error(self, "bind failed."); return;
+			codeserver__error(self, "bind failed."); return false;
 		}
 	}
 
 	if (listen(self->listen_fd, SOMAXCONN) < 0) {
-		codeserver__error(self, "listen failed."); return;
+		codeserver__error(self, "listen failed."); return false;
 	}
 	printf("codeserver start listening port %d.\n" , self->port);
+	return true;
 }
 
 void codeserver_stop(codeserver *self) {

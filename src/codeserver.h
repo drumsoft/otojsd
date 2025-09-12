@@ -35,7 +35,7 @@ typedef struct {
 } codeserver;
 
 codeserver *codeserver_init(int port, bool findfreeport, const char *allow, bool verbose, const char *(*callback)(const char *code));
-void codeserver_start(codeserver *self);
+bool codeserver_start(codeserver *self);
 bool codeserver_run(codeserver *self);
 void codeserver_stop(codeserver *self);
 
