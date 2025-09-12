@@ -22,6 +22,7 @@
 #include <string>
 
 #include "script_engine.h"
+#include "script_engine_console.h"
 #include "const.h"
 
 // internal functions prototypes
@@ -52,6 +53,9 @@ ScriptEngine::ScriptEngine(const char *exec_path) {
     v8::Local<v8::Context> context = v8::Context::New(this->isolate_);
     this->context_.Reset(this->isolate_, context);
     v8::Context::Scope context_scope(context);
+
+    // Setup console object
+    script_engine_console::setup(this->isolate_, context);
 
     // Create reusable string cache.
     v8::Local<v8::String> no_file_name_local = v8::String::NewFromUtf8(isolate_, "posted").ToLocalChecked();
