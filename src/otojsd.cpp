@@ -18,8 +18,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "logger.h"
+
 #include <CoreFoundation/CoreFoundation.h>
 #include <pthread.h>
+#include <format>
 
 #include "otojsd.h"
 #include "script_engine.h"
@@ -52,12 +55,14 @@ bool input_enabled;
 
 void otojsd_start(otojsd_options *options, const char *exec_path, char **env) {
 	const char *start_code = OTOJSD_DEFAULT_STARTCODE;
-	printf("otojsd - Otojs sound server - start with %s.\n", start_code);
-	printf("otojsd port: %d, allowed clients: %s\n", options->port, options->allow_pattern);
-	printf("*WARNING* don't expose otojsd port to network.\n");
+	logger::log(std::format("otojsd - Otojs sound server - start with {}.", start_code));
+	logger::log(std::format("otojsd port: {}, allowed clients: {}.", options->port, options->allow_pattern));
+	if (strcmp(options->allow_pattern, OTOJSD_DEFAULT_IPMASK) != 0) {
+		logger::warn("Otojsd will run code sent from other devices.");
+	}
 
 	if (options->output) {
-		printf("recording: %s\n", options->output);
+		logger::log(std::format("recording: {}.", options->output));
 		recordBuffer = (float *)malloc(options->channel);
 		ar = AiffRecorder_create(options->channel, 32, options->sample_rate);
 		AiffRecorder_open(ar, options->output);
@@ -83,7 +88,7 @@ void otojsd_start(otojsd_options *options, const char *exec_path, char **env) {
 	running = true;
 
 	if (SIG_ERR == signal(SIGINT, otojsd__stop)) {
-		printf("failed to set signal handler.n");
+		logger::error("failed to set signal handler.");
 		running = false;
 	}
 
@@ -109,7 +114,7 @@ void otojsd_start(otojsd_options *options, const char *exec_path, char **env) {
 	pthread_mutex_destroy( &mutex_for_script_engine );
 	pthread_cond_destroy( &cond_for_script_engine );
 
-	printf("otojsd - stopped\n");
+	logger::log("otojsd - stopped.");
 }
 
 void otojsd__stop(int sig) {
@@ -136,11 +141,11 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 	// スクリプトエンジンで render() の実行（戻り値が count）
 	RenderResult result = se->executeRender(inoutbuf, frames, channels);
 
-	// エラー時はエラーテキストを print して has_runtime_error を true にセット
+	// エラー時はエラーテキストを出力して has_runtime_error を true にセット
 	if (result.error) {
 		if ( ! has_runtime_error ) {
 			has_runtime_error = true;
-			printf ("render runtime error: %s\n", result.error);
+			logger::error(std::format("render runtime error: {}.", result.error));
 		}
 	} else {
 		has_runtime_error = false;
