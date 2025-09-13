@@ -261,6 +261,7 @@ const char *FormatException(v8::Isolate *isolate, v8::TryCatch *try_catch) {
         result += std::to_string(linenum);
         result += ": ";
         result += exception_string;
+        result += "\n";
         // Print line of source code.
         v8::String::Utf8Value sourceline(
             isolate, message->GetSourceLine(context).ToLocalChecked());
@@ -284,6 +285,7 @@ const char *FormatException(v8::Isolate *isolate, v8::TryCatch *try_catch) {
             v8::String::Utf8Value stack_trace(isolate, stack_trace_string);
             const char *err = ToCString(stack_trace);
             result += err;
+            result += "\n";
         }
     }
     return strdup(result.c_str());

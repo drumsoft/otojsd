@@ -53,8 +53,7 @@ bool has_runtime_error;
 bool input_enabled;
 
 void otojsd_start(otojsd_options *options, const char *start_code, const char *exec_path, char **env) {
-	logger::log(std::format("otojsd - Otojs sound server - start with {}.", start_code));
-	logger::log(std::format("otojsd port: {}, allowed clients: {}.", options->port, options->allow_pattern));
+	logger::log(std::format("otojsd - Otojs sound server - port: {}, allowed clients: {}.", options->port, options->allow_pattern));
 	if (strcmp(options->allow_pattern, OTOJSD_DEFAULT_IPMASK) != 0) {
 		logger::warn("Otojsd will run code sent from other devices.");
 	}
@@ -75,7 +74,12 @@ void otojsd_start(otojsd_options *options, const char *start_code, const char *e
 
 	se = new ScriptEngine(exec_path);
 	se->setGlobalVariable("sample_rate", options->sample_rate);
-	se->executeFromFile(start_code);
+	logger::log(std::format("server start with {}.", start_code));
+	const char *error_message = se->executeFromFile(start_code);
+	if (error_message) {
+		logger::error(error_message);
+		delete error_message;
+	}
 
 	has_runtime_error = false;
 	audiounit_start(options->enable_input, options->channel, options->sample_rate, script_audio_callback);
@@ -171,14 +175,17 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 }
 
 const char *script_code_liveeval(const char *code) {
-	pthread_mutex_lock( &mutex_for_script_engine );
-	pthread_cond_wait( &cond_for_script_engine, &mutex_for_script_engine );
+    pthread_mutex_lock(&mutex_for_script_engine);
+    pthread_cond_wait(&cond_for_script_engine, &mutex_for_script_engine);
 
-	const char *rettext = se->executeCode(code);
+    const char *error_message = se->executeCode(code);
 
-	has_runtime_error = false;
-	pthread_mutex_unlock( &mutex_for_script_engine );
+    has_runtime_error = false;
+    pthread_mutex_unlock(&mutex_for_script_engine);
 
-	return rettext;
+    if (error_message) {
+        logger::error(error_message);
+    }
+
+    return error_message;
 }
-
