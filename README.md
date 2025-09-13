@@ -37,6 +37,12 @@ otojsd will start and listen 14609 (default port). When you send JavaScript code
 curl -X POST http://localhost:14609/ --data-binary @samples/otojs-sample.js
 ```
 
+Using the attached otojsc script can reduce the amount typing.
+
+```
+./otojsc samples/otojs-sample.js
+```
+
 * otojsd repeatedly calls the JavaScript function oto_render(frames, channels, input_array).
 * oto_render must return a Float32Array with frames * channels elements.
 * The returned Float32Array, for stereo, has samples for each channel arranged sequentially like [L0, R0, L1, R1, ...].
@@ -84,17 +90,28 @@ otojsd supports all launch options from [otoperld](https://github.com/drumsoft/O
 ```
 otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_number] [-i] [filename]
  -v, --verbose       be verbose.
- -c, --channel 2     Number of channels OtoPerl generate. default is 2.
- -r, --rate 48000    Sampling rate of the sound OtoPerl generate. default is 48000.
- -a, --allow 192.168 Host address pattern allowed to access otoperld. default is 127.0.0.1
+ -c, --channel 2     Number of channels otojsd generate. default is 2.
+ -r, --rate 48000    Sampling rate of the sound otojsd generate. default is 48000.
+ -a, --allow 192.168 Host address pattern allowed to access otojsd. default is 127.0.0.1
                      ex: 192.168.0.8 (1 host allowed, = 192.168.0.8/255.255.255.255)
                          192.168.1.0/255.255.252.0 (22 bit netmask)
                          192.168 (16 bit netmask, = 192.168.0.0/255.255.0.0)
  -p, --port 99999    Port number to listen. default is 14609.
- -f, --findfreeport  Find free port when it's already used. The found port will be put in file '.otoperld_port'.
+ -f, --findfreeport  Find free port when it's already used. The found port will be put in file '.otojsd_port'.
  -o, --output x.aiff Record sounds to specified file.
  -i, --enable-input  Enables an audio input (from Default Input Device)
- filename            OtoPerl script ran when server launched. default is 'otojsd-start.js'.
+ filename            a Javascript file ran when server launched. default is 'otojsd-start.js'.
+```
+
+otojsc script has some options.
+
+```
+otojsc [-h host_address] [-p port_number|-f] filename
+ -h 192.168.0.1      Host name to post. default is localhost.
+ -p 99999            Port number to post. default is 14609.
+ -f                  The port number will be read from '.otojsd_port' file.
+ filename            a Javascript file sent to otojsd server.
+                     if "-" (hyphen) specified, the content read from STDIN will be sent.
 ```
 
 ## build instruction
