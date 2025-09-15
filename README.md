@@ -34,13 +34,13 @@ release/otojsd
 otojsd will start and listen 14609 (default port). When you send JavaScript code to otojsd, it compiles the code and uses it for sound generation.
 
 ```
-curl -X POST http://localhost:14609/ --data-binary @samples/otojs-sample.js
+curl -X POST http://localhost:14609/ --data-binary @examples/otojs-example.js
 ```
 
 Using the attached otojsc script can reduce the amount typing.
 
 ```
-./otojsc samples/otojs-sample.js
+./otojsc examples/otojs-example.js
 ```
 
 * otojsd repeatedly calls the JavaScript function oto_render(frames, channels, input_array).
@@ -81,7 +81,7 @@ function oto_render(frames, channels, input_array) {
 }
 ```
 
-Please also check the examples in the samples directory.
+Please also check the examples directory.
 
 ## launch options
 
