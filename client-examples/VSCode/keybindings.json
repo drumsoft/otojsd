@@ -1,0 +1,15 @@
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "shift+cmd+o",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Post selection to otojsd",
+        "when": "editorHasSelection"
+    },
+    {
+        "key": "shift+alt+cmd+o",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Post file to otojsd",
+        "when": "editorFocus"
+    }
+]
