@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otojs client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f3f3;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        h1 {
+            flex-grow: 0;
+            font-size: 1.0rem;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        h2 {
+            flex-grow: 0;
+            font-size: 1.0rem;
+        }
+
+        .controls {
+            flex-grow: 0;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        button {
+            padding: 0.6rem 0.9rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+
+            background-color: #667eea;
+            color: white;
+        }
+        button:hover:not(:disabled) {
+            background-color: #5a6fd8;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .code-panel {
+            flex: 1;
+            min-height: 10px;
+            border-bottom: 1px solid #e0e0e0;
+
+            display: flex;
+            flex-direction: column;
+        }
+        #codeEditor {
+            flex: 1;
+            border: none;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            resize: none;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        #codeEditor:focus {
+            outline: none;
+            background-color: white;
+        }
+
+        .results-panel {
+            flex: 1;
+            min-height: 10px;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: white;
+        }
+        .result-entry {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .result-timestamp {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .result-code {
+            background-color: #f1f3f4;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .result-output {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #28a745;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .result-error {
+            background-color: #fff5f5;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #dc3545;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #dc3545;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .initialMessage {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Otojs client page example</h1>
+
+    <div class="controls">
+        destination: <input type="text" id="hostInput" value="" placeholder="hostname:port">
+    </div>
+
+    <div class="code-panel">
+        <textarea id="codeEditor">
+// oto_render should return Float32Array(frames * channels).
+function oto_render(frames, channels, input_array) {
+    let output = new Float32Array(frames * channels);
+    for (let f = 0; f &lt; frames; f++) {
+        let v = 0.5 * Math.sin( 3.1415 * 2 * frame * 440 / sample_rate );
+        for (let c = 0; c &lt; channels; c++) {
+            output[f * channels + c] = v;
+        }
+        frame++;
+    }
+    return output;
+}
+</textarea>
+        <div class="controls">
+            <div class="button-group">
+                <button id="sendSelectedBtn" class="btn-secondary" disabled>Send Selected Code</button>
+                <button id="sendAllBtn" class="btn-primary">Send All Code</button>
+            </div>
+        </div>
+    </div>
+    <div id="resultsArea" class="results-panel">
+        <div class="initialMessage">
+            <p>Results will appear here after code post.</p>
+        </div>
+    </div>
+</div>
+    <script>
+        const indent = "    "; // 4 spaces
+        // DOM Elements
+        const hostInput = document.getElementById('hostInput');
+        const codeEditor = document.getElementById('codeEditor');
+        const sendAllBtn = document.getElementById('sendAllBtn');
+        const sendSelectedBtn = document.getElementById('sendSelectedBtn');
+        const resultsArea = document.getElementById('resultsArea');
+
+        let isExecuting = false;
+
+        // initialize from current location
+        function initializeLocation(loc) {
+            if (loc.host) {
+                hostInput.value = loc.host;
+                hostInput.parentElement.style.display = 'none';
+            } else {
+                hostInput.value = "localhost:14609";
+            }
+        }
+
+        // Update selected button state based on text selection
+        function updateSelectedButtonState() {
+            const selectedText = getSelectedText();
+            sendSelectedBtn.disabled = !selectedText || selectedText.trim() === '' || isExecuting;
+        }
+
+        // Get selected text from code editor
+        function getSelectedText() {
+            const start = codeEditor.selectionStart;
+            const end = codeEditor.selectionEnd;
+            return codeEditor.value.substring(start, end);
+        }
+
+        // Event listeners for selection changes
+        codeEditor.addEventListener('mouseup', updateSelectedButtonState);
+        codeEditor.addEventListener('keyup', updateSelectedButtonState);
+        codeEditor.addEventListener('select', updateSelectedButtonState);
+
+        // Send code to server
+        async function sendCode(code) {
+            if (isExecuting) return;
+            
+            const url = `http://${hostInput.value.trim()}/`;
+
+            // Clear initial message if it's the first execution
+            const initialMessage = resultsArea.querySelector('.initialMessage');
+            if (initialMessage) {
+                resultsArea.innerHTML = '';
+            }
+
+            // Create result entry
+            const resultEntry = document.createElement('div');
+            resultEntry.className = 'result-entry';
+
+            const timestamp = new Date().toLocaleString();
+            resultEntry.innerHTML = `
+                <div class="result-timestamp">${timestamp} - Executing...</div>
+                <div class="result-code">${escapeHtml(code)}</div>
+                <div class="result-output">
+                    <span class="loading"></span>Sending request to ${url}...
+                </div>
+            `;
+
+            resultsArea.appendChild(resultEntry);
+            scrollToBottom();
+
+            isExecuting = true;
+            updateButtonStates();
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: code
+                });
+
+                const responseText = await response.text();
+                
+                // Update result with success
+                const outputDiv = resultEntry.querySelector('.result-output');
+                outputDiv.className = 'result-output';
+                outputDiv.innerHTML = escapeHtml(responseText) || 'ok';
+
+                // Update timestamp
+                const timestampDiv = resultEntry.querySelector('.result-timestamp');
+                timestampDiv.textContent = `${timestamp} - Status: ${response.status} ${response.statusText}`;
+
+            } catch (error) {
+                // Update result with error
+                const outputDiv = resultEntry.querySelector('.result-output');
+                outputDiv.className = 'result-error';
+                outputDiv.innerHTML = `Error: ${escapeHtml(error.message)}`;
+
+                // Update timestamp
+                const timestampDiv = resultEntry.querySelector('.result-timestamp');
+                timestampDiv.textContent = `${timestamp} - Connection Failed`;
+            }
+
+            isExecuting = false;
+            updateButtonStates();
+            scrollToBottom();
+        }
+
+        // Update button states
+        function updateButtonStates() {
+            sendAllBtn.disabled = isExecuting;
+            updateSelectedButtonState();
+        }
+
+        // Scroll results area to bottom
+        function scrollToBottom() {
+            resultsArea.scrollTop = resultsArea.scrollHeight;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners for buttons
+        sendAllBtn.addEventListener('click', () => {
+            const code = codeEditor.value.trim();
+            if (code) {
+                sendCode(code);
+            }
+        });
+        sendSelectedBtn.addEventListener('click', () => {
+            const selectedCode = getSelectedText().trim();
+            if (selectedCode) {
+                sendCode(selectedCode);
+            }
+        });
+        // Keyboard shortcuts
+        codeEditor.addEventListener('keydown', (e) => {
+            console.log(e.key, e.code, "⌘:", e.ctrlKey || e.metaKey, " ⇧:", e.shiftKey, " ⌥:", e.altKey);
+            // Command+Option+Enter or Command+Shift+Option+"O" to send all code
+            // Command+Enter or Command+Shift+"O" to send selected code
+            if ((e.ctrlKey || e.metaKey) && (
+                e.key === 'Enter' ||
+                (e.shiftKey && event.code === 'KeyO')
+            )) {
+                e.preventDefault();
+                if (e.altKey) {
+                    if (!sendAllBtn.disabled) {
+                        sendAllBtn.click();
+                    }
+                } else {
+                    if (!sendSelectedBtn.disabled) {
+                        sendSelectedBtn.click();
+                    }
+                }
+                return;
+            }
+            // disable Tab focus navigation and enable Tab character insertion.
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = codeEditor.selectionStart;
+                const end = codeEditor.selectionEnd;
+                codeEditor.value = codeEditor.value.substring(0, start) + indent + codeEditor.value.substring(end);
+                codeEditor.selectionStart = codeEditor.selectionEnd = start + indent.length;
+            }
+            // add indentation on Enter key
+            if (e.key === 'Enter') {
+                const start = codeEditor.selectionStart;
+                const end = codeEditor.selectionEnd;
+                const lineStart = codeEditor.value.lastIndexOf('\n', start - 1) + 1;
+                const line = codeEditor.value.substring(lineStart, start);
+                const leadingSpaces = line.match(/^\s*/)[0];
+                if (leadingSpaces) {
+                    e.preventDefault();
+                    codeEditor.value = codeEditor.value.substring(0, start) + '\n' + leadingSpaces + codeEditor.value.substring(end);
+                    codeEditor.selectionStart = codeEditor.selectionEnd = start + 1 + leadingSpaces.length;
+                }
+            }
+        });
+
+        // Initialize button states
+        updateButtonStates();
+
+        initializeLocation(window.location);
+    </script>
+</body>
+</html>

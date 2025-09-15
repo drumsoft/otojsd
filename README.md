@@ -37,10 +37,10 @@ otojsd will start and listen 14609 (default port). When you send JavaScript code
 curl -X POST http://localhost:14609/ --data-binary @examples/otojs-example.js
 ```
 
-Using the attached otojsc script can reduce the amount typing.
+Using otojsc script (in client-examples) can reduce the amount typing.
 
 ```
-./otojsc examples/otojs-example.js
+client-examples/otojsc examples/otojs-example.js
 ```
 
 * otojsd repeatedly calls the JavaScript function oto_render(frames, channels, input_array).
