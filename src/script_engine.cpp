@@ -256,9 +256,13 @@ const char *FormatException(v8::Isolate *isolate, v8::TryCatch *try_catch) {
         v8::Local<v8::Context> context(isolate->GetCurrentContext());
         const char *filename_string = ToCString(filename);
         int linenum = message->GetLineNumber(context).FromJust();
+        int start = message->GetStartColumn(context).FromJust();
+        int end = message->GetEndColumn(context).FromJust();
         result += filename_string;
         result += ":";
         result += std::to_string(linenum);
+        result += ":";
+        result += std::to_string(start);
         result += ": ";
         result += exception_string;
         result += "\n";
@@ -269,11 +273,9 @@ const char *FormatException(v8::Isolate *isolate, v8::TryCatch *try_catch) {
         result += sourceline_string;
         result += "\n";
         // Print wavy underline (GetUnderline is deprecated).
-        int start = message->GetStartColumn(context).FromJust();
         for (int i = 0; i < start; i++) {
             result += " ";
         }
-        int end = message->GetEndColumn(context).FromJust();
         for (int i = start; i < end; i++) {
             result += "^";
         }

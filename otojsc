@@ -2,16 +2,15 @@
 
 host="localhost"
 port="14609"
-port_default="14609"
 usage="Usage: $0 [-h host_address] [-p port_number|-f] filename"
 
 while getopts "h:p:f" opt; do
   case "$opt" in
     h) host="$OPTARG" ;;
     p) port="$OPTARG" ;;
-	f) port="" ;;
+    f) port="" ;;
     \?) echo $usage >&2
-        exit 1 ;;
+      exit 1 ;;
   esac
 done
 shift $((OPTIND - 1))
@@ -27,7 +26,7 @@ if [ -z "$port" ]; then
     port="$(cat .otojsd_port)"
   else
     echo "Error: .otojsd_port file not found." >&2
-	exit 1
+    exit 1
   fi
 fi
 
