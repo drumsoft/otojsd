@@ -24,11 +24,21 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <libgen.h>
+#include <format>
 
 #include "const.h"
 #include "codeserver.h"
+#include "logger.h"
 
 #define BUFFERSIZE 8192
+
+const int METHOD_UNKNOWN = 0;
+const int METHOD_UNSUPPORTED = -1;
+const int METHOD_GET     = 1;
+const int METHOD_POST    = 2;
 
 // -------------------------------------------------------- private function
 
@@ -36,6 +46,12 @@ void codeserver__error(codeserver *self, const char *err);
 bool codeserver__decode_ipaddr(char *str, unsigned char *addr, unsigned char *mask);
 bool codeserver__check_client_ip( codeserver *self, struct sockaddr_in *client);
 void codeserver__write_port_file( codeserver *self, const char *path, int port );
+void codeserver__respond(int conn_fd, int status, const char *body, const char *server_message);
+int codeserver__get_http_method(const char *request);
+bool codeserver__is_safe_path(const char *path);
+bool codeserver__serve_file(codeserver *self, int conn_fd, const char *path);
+char *codeserver__get_request_path(const char *request);
+const char *codeserver__get_mime_type(const char *filename);
 
 // ------------------------------------------------- codeserver_text decraration
 struct codeserver_textnode_s {
@@ -58,12 +74,18 @@ void  codeserver_text_destroy(codeserver_text *self);
 
 // --------------------------------------------------- codeserver implimentation
 
-codeserver *codeserver_init(int port, bool findfreeport, const char *c_allow, bool verbose, const char *(*callback)(const char *code)) {
+codeserver *codeserver_init(int port, bool findfreeport, const char *c_allow, bool verbose, const char *document_root, const char *(*callback)(const char *code)) {
 	codeserver *self = (codeserver *)malloc(sizeof(codeserver));
 	self->callback = callback;
 	self->port = port;
 	self->findfreeport = findfreeport;
 	self->verbose = verbose;
+
+	if (document_root) {
+		self->document_root = strdup(document_root);
+	} else {
+		self->document_root = NULL;
+	}
 	
 	char *allow = (char *)malloc(strlen(c_allow));
 	if (!allow) {
@@ -131,6 +153,10 @@ bool codeserver_start(codeserver *self) {
 
 void codeserver_stop(codeserver *self) {
 	close(self->listen_fd);
+	if (self->document_root) {
+		free((void *)self->document_root);
+	}
+	free(self);
 	printf("codeserver stop.\n");
 }
 
@@ -157,10 +183,7 @@ bool codeserver_run(codeserver *self) {
 
 	printf("client %s: ", inet_ntoa(caddr.sin_addr) );
 	if ( ! codeserver__check_client_ip( self, &caddr ) ) {
-		printf("accessed denied.\n");
-		write(conn_fd, "HTTP/1.1 403 Forbidden\r\n", 24);
-		write(conn_fd, "Content-Type: text/plain;\r\n\r\n", 29);
-		write(conn_fd, "access from forbidden address.", 30);
+		codeserver__respond(conn_fd, 403, "accessed denied.", "client from forbidden address.");
 		if ( close(conn_fd) < 0) {
 			codeserver__error(self, "close failed."); return false;
 		}
@@ -191,20 +214,42 @@ bool codeserver_run(codeserver *self) {
 		}
 	};
 
+	char *request = NULL;
+	int method;
+	char *path = NULL;
+	char *codestart = NULL;
 	if (cstext->size == 0) {
-		printf("no code received ?.\n");
-		write(conn_fd, "HTTP/1.1 400 no code received\r\n", 31);
-		write(conn_fd, "Content-Type: text/plain;\r\n\r\n", 29);
-		write(conn_fd, "no code received.", 17);
+		codeserver__respond(conn_fd, 400, "request is empty", "request is empty");
 		codeserver_text_destroy(cstext);
-	}else{
-		char *code = codeserver_text_join(cstext);
-		printf("%d bytes code to eval.\n", cstext->size);
-		codeserver_text_destroy(cstext);
+		goto RETURN_AFTER_CLOSE;
+	}
+	request = codeserver_text_join(cstext);
+	printf("%d bytes request received.\n", cstext->size);
+	codeserver_text_destroy(cstext);
 
+	method = codeserver__get_http_method(request);
+	switch (method) {
+	case METHOD_GET:
+		if (!self->document_root) {
+			codeserver__respond(conn_fd, 404, "not found.", "document root is not configured.");
+			goto RETURN_AFTER_CLOSE;
+		}
+		path = codeserver__get_request_path(request);
+		if (!path) {
+			codeserver__respond(conn_fd, 400, "bad request format.", "failed to parse request path.");
+			goto RETURN_AFTER_CLOSE;
+		}
+		printf("GET %s\n", path);
+		if (!codeserver__is_safe_path(path)) {
+			codeserver__respond(conn_fd, 403, "forbidden.", "unsafe path requested.");
+			goto RETURN_AFTER_CLOSE;
+		}
+		codeserver__serve_file(self, conn_fd, path);
+		break;
+	case METHOD_POST:
 		const char *ret;
 		bool ret_allocated;
-		char *codestart = strstr(code, "\r\n\r\n");
+		codestart = strstr(request, "\r\n\r\n");
 		if (codestart != NULL) {
 			codestart += 4;
 			if ( self->verbose )
@@ -217,23 +262,73 @@ bool codeserver_run(codeserver *self) {
 		}
 
 		if (ret == NULL) {
-			write(conn_fd, "HTTP/1.1 200 OK\r\n", 17);
-			write(conn_fd, "Content-Type: text/plain;\r\n\r\n", 29);
+			codeserver__respond(conn_fd, 200, NULL, NULL);
 		}else{
-			write(conn_fd, "HTTP/1.1 400 eval failed\r\n", 26);
-			write(conn_fd, "Content-Type: text/plain;\r\n\r\n", 29);
-			write(conn_fd, ret, strlen(ret));
+			codeserver__respond(conn_fd, 400, ret, "eval failed.");
 		}
 
 		if (ret_allocated) free((void *)ret);
-		free(code);
+		break;
+	default:
+		codeserver__respond(conn_fd, 400, "unsupported method.", "unsupported method.");
+		break;
 	}
 
+RETURN_AFTER_CLOSE:
+	if (path) free(path);
+	if (request) free(request);
 	if ( close(conn_fd) < 0) {
 		codeserver__error(self, "close failed.");
 		return false;
 	}
 	return true;
+}
+
+// -------------------------------------------- codeserver http helper implimentation
+
+int codeserver__get_http_method(const char *request) {
+	if (strncmp(request, "GET ", 4) == 0) {
+		return METHOD_GET;
+	} else if (strncmp(request, "POST ", 5) == 0) {
+		return METHOD_POST;
+	} else {
+		return METHOD_UNKNOWN;
+	}
+}
+
+void codeserver__respond(int conn_fd, int status, const char *body, const char *server_message) {
+	if (server_message) {
+		logger::error(std::format("[server response] {} {}", status, server_message));
+	}
+	char buf[256];
+	switch (status) {
+		case 200:
+			write(conn_fd, "HTTP/1.1 200 OK\r\n", 17);
+			break;
+		case 400:
+			write(conn_fd, "HTTP/1.1 400 Bad Request\r\n", 26);
+			break;
+		case 403:
+			write(conn_fd, "HTTP/1.1 403 Forbidden\r\n", 24);
+			break;
+		case 404:
+			write(conn_fd, "HTTP/1.1 404 Not Found\r\n", 24);
+			break;
+		case 500:
+			write(conn_fd, "HTTP/1.1 500 Internal Server Error\r\n", 36);
+			break;
+		default:
+			snprintf(buf, sizeof(buf), "HTTP/1.1 %d Unknown Error\r\n", status);
+			write(conn_fd, buf, strlen(buf));
+			break;
+	}
+	write(conn_fd, "Content-Type: text/plain;\r\n", 29);
+	size_t body_length = body ? strlen(body) : 0;
+	snprintf(buf, sizeof(buf), "Content-Length: %zu\r\n\r\n", body_length);
+	write(conn_fd, buf, strlen(buf));
+	if (body_length > 0) {
+		write(conn_fd, body, body_length);
+	}
 }
 
 void codeserver__error(codeserver *self, const char *err) {
@@ -321,3 +416,115 @@ void codeserver_text_destroy(codeserver_text *self) {
 	free(self);
 }
 
+// -------------------------------------------- codeserver get method implimentation
+
+char *codeserver__get_request_path(const char *request) {
+	const char *start = strchr(request, ' ');
+	if (!start) return NULL;
+	start++;
+
+	const char *end = strchr(start, ' ');
+	if (!end) return NULL;
+
+	int length = end - start;
+	char *path = (char *)malloc(length + 1);
+	strncpy(path, start, length);
+	path[length] = '\0';
+	return path;
+}
+
+bool codeserver__is_safe_path(const char *path) {
+	if (strstr(path, "..") != NULL) {
+		return false;
+	}
+
+	char *path_copy = strdup(path);
+	char *token = strtok(path_copy, "/");
+	while (token != NULL) {
+		if (token[0] == '.') {
+			free(path_copy);
+			return false;
+		}
+		token = strtok(NULL, "/");
+	}
+	free(path_copy);
+	return true;
+}
+
+const char *codeserver__get_mime_type(const char *filename) {
+	const char *ext = strrchr(filename, '.');
+	if (!ext) return "application/octet-stream";
+
+	if (strcmp(ext, ".html") == 0 || strcmp(ext, ".htm") == 0) return "text/html";
+	if (strcmp(ext, ".css") == 0) return "text/css";
+	if (strcmp(ext, ".js") == 0) return "application/javascript";
+	if (strcmp(ext, ".json") == 0) return "application/json";
+	if (strcmp(ext, ".txt") == 0) return "text/plain";
+	if (strcmp(ext, ".png") == 0) return "image/png";
+	if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0) return "image/jpeg";
+	if (strcmp(ext, ".gif") == 0) return "image/gif";
+	if (strcmp(ext, ".svg") == 0) return "image/svg+xml";
+
+	return "application/octet-stream";
+}
+
+bool codeserver__serve_file(codeserver *self, int conn_fd, const char *path) {
+	char full_path[1024];
+
+	if (strcmp(path, "/") == 0) {
+		snprintf(full_path, sizeof(full_path), "%s/index.html", self->document_root);
+	} else {
+		snprintf(full_path, sizeof(full_path), "%s%s", self->document_root, path);
+	}
+
+	struct stat file_stat;
+	if (stat(full_path, &file_stat) < 0) {
+		if (strcmp(path, "/") != 0) {
+			char dir_path[1024];
+			snprintf(dir_path, sizeof(dir_path), "%s%s", self->document_root, path);
+			if (stat(dir_path, &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) {
+				snprintf(full_path, sizeof(full_path), "%s/index.html", dir_path);
+				if (stat(full_path, &file_stat) < 0) {
+					codeserver__respond(conn_fd, 404, "not found.", "index.html not found in directory.");
+					return false;
+				}
+			} else {
+				codeserver__respond(conn_fd, 404, "not found.", full_path);
+				return false;
+			}
+		} else {
+			codeserver__respond(conn_fd, 404, "not found.", std::format("index.html not found: {}", full_path).c_str());
+			return false;
+		}
+	}
+
+	if (S_ISDIR(file_stat.st_mode)) {
+		snprintf(full_path + strlen(full_path), sizeof(full_path) - strlen(full_path), "/index.html");
+		if (stat(full_path, &file_stat) < 0) {
+			codeserver__respond(conn_fd, 404, "not found.", std::format("index.html not found in directory: {}", full_path).c_str());
+			return false;
+		}
+	}
+
+	int file_fd = open(full_path, O_RDONLY);
+	if (file_fd < 0) {
+		codeserver__respond(conn_fd, 500, "internal server error.", std::format("failed to open file: {}", full_path).c_str());
+		return false;
+	}
+
+	const char *mime_type = codeserver__get_mime_type(full_path);
+	char header[256];
+	snprintf(header, sizeof(header), "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %lld\r\n\r\n",
+	         mime_type, (long long)file_stat.st_size);
+	write(conn_fd, header, strlen(header));
+
+	char buffer[8192];
+	ssize_t bytes_read;
+	while ((bytes_read = read(file_fd, buffer, sizeof(buffer))) > 0) {
+		write(conn_fd, buffer, bytes_read);
+	}
+
+	close(file_fd);
+	printf("served file: %s (%lld bytes)\n", full_path, (long long)file_stat.st_size);
+	return true;
+}

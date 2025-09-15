@@ -84,7 +84,7 @@ void otojsd_start(otojsd_options *options, const char *start_code, const char *e
 	has_runtime_error = false;
 	audiounit_start(options->enable_input, options->channel, options->sample_rate, script_audio_callback);
 
-	cs = codeserver_init(options->port, options->findfreeport, options->allow_pattern, options->verbose, script_code_liveeval);
+	cs = codeserver_init(options->port, options->findfreeport, options->allow_pattern, options->verbose, options->document_root, script_code_liveeval);
 	running = codeserver_start(cs);
 	
 	if (SIG_ERR == signal(SIGINT, otojsd__stop)) {

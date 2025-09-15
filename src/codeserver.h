@@ -32,9 +32,10 @@ typedef struct {
 	int listen_fd;
 	const char *(*callback)(const char *code);
 	bool verbose;
+	const char *document_root;
 } codeserver;
 
-codeserver *codeserver_init(int port, bool findfreeport, const char *allow, bool verbose, const char *(*callback)(const char *code));
+codeserver *codeserver_init(int port, bool findfreeport, const char *allow, bool verbose, const char *document_root, const char *(*callback)(const char *code));
 bool codeserver_start(codeserver *self);
 bool codeserver_run(codeserver *self);
 void codeserver_stop(codeserver *self);
