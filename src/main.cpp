@@ -71,16 +71,16 @@ int main(int argc, char **argv, char **env) {
 				length = strlen(optarg);
 				if ( length <= 0 || 39 < length)
 					die("-a, --allow parameter is like '192.168.1.3' or '192.168.2.0/255.255.255.0'.");
-				options.allow_pattern = strdup(optarg);
+				options.allow_pattern = optarg;
 				break;
 			case 'o':
-				options.output = strdup(optarg);
+				options.output = optarg;
 				break;
 			case 'i':
 				options.enable_input = true;
 				break;
 			case 'd':
-				options.document_root = strdup(optarg);
+				options.document_root = optarg;
 				break;
 		}
 	}
@@ -88,10 +88,6 @@ int main(int argc, char **argv, char **env) {
 	const char *start_code = optind < argc ? argv[optind] : OTOJSD_DEFAULT_STARTCODE;
 
 	otojsd_start(&options, start_code, argv[0], env);
-
-	if (options.allow_pattern) free((void *)options.allow_pattern);
-	if (options.output)        free((void *)options.output);
-	if (options.document_root) free((void *)options.document_root);
 
 	return 0;
 }

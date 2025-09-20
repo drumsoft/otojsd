@@ -6,7 +6,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/otojsd",
             "args": [
-                "-i"
             ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
