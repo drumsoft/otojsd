@@ -36,7 +36,7 @@
             "args": [
                 "-s", "-X", "POST",
                 "http://localhost:14609",
-                "--data-binary", "${selectedText}",
+                "--data-binary", "'${selectedText}'",
                 "1>&2"
             ],
             "problemMatcher": []
