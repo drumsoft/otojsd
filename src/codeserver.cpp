@@ -322,7 +322,7 @@ void codeserver__respond(int conn_fd, int status, const char *body, const char *
 			write(conn_fd, buf, strlen(buf));
 			break;
 	}
-	write(conn_fd, "Content-Type: text/plain;\r\n", 29);
+	write(conn_fd, "Content-Type: text/plain;\r\n", 27);
 	size_t body_length = body ? strlen(body) : 0;
 	snprintf(buf, sizeof(buf), "Content-Length: %zu\r\n\r\n", body_length);
 	write(conn_fd, buf, strlen(buf));
