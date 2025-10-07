@@ -16,7 +16,7 @@
         },
         {
             "type": "shell",
-            "label": "Post file to otojsd",
+            "label": "Post file to the server",
             "command": "curl",
             "args": [
                 "-s", "-X", "POST",
@@ -31,7 +31,7 @@
         },
         {
             "type": "shell",
-            "label": "Post selection to otojsd",
+            "label": "Post selection to the server",
             "command": "curl",
             "args": [
                 "-s", "-X", "POST",
