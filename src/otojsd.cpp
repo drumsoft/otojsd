@@ -52,6 +52,8 @@ bool has_runtime_error;
 
 bool input_enabled;
 
+bool level_meter_enabled = false;
+
 void otojsd_start(otojsd_options *options, const char *start_code, const char *exec_path, char **env) {
 	logger::log(std::format("otojsd - Otojs sound server - port: {}, allowed clients: {}.", options->port, options->allow_pattern));
 	if (strcmp(options->allow_pattern, OTOJSD_DEFAULT_IPMASK) != 0) {
@@ -68,6 +70,8 @@ void otojsd_start(otojsd_options *options, const char *start_code, const char *e
 	}
 
 	input_enabled = options->enable_input;
+
+	level_meter_enabled = options->level_meter;
 
 	pthread_mutex_init( &mutex_for_script_engine , NULL );
 	pthread_cond_init( &cond_for_script_engine, NULL );
@@ -156,7 +160,7 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 				for (channel = 0; channel < channels; channel++) {
 					Float32 val = inoutbuf[i++];
 					recordBuffer[channel] = ((Float32 *)( outbuf[channel].mData ))[frame] = val;
-					if (level < fabs(val)) { level = fabs(val); }
+					if (level_meter_enabled && level < fabs(val)) { level = fabs(val); }
 					if (i >= result.count) break;
 				}
 				AiffRecorder_write32bit(ar, (uint32_t *)recordBuffer, 1);
@@ -166,12 +170,14 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 				for (channel = 0; channel < channels; channel++) {
 					Float32 val = inoutbuf[i++];
 					((Float32 *)( outbuf[channel].mData ))[frame] = val;
-					if (level < fabs(val)) { level = fabs(val); }
+					if (level_meter_enabled && level < fabs(val)) { level = fabs(val); }
 					if (i >= result.count) break;
 				}
 			}
 		}
-		logger::levelmeter(level);
+		if (level_meter_enabled) {
+			logger::levelmeter(level);
+		}
 	}
 
 	delete[] inoutbuf;

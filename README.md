@@ -101,6 +101,7 @@ otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_numbe
  -o, --output x.aiff Record sounds to specified file.
  -i, --enable-input  Enables an audio input (from Default Input Device)
  -d, --document-root The path to the content returned when otojsd is accessed via GET method.
+ -l, --level-meter   Enables level meter.
  filename            a Javascript file ran when server launched. default is 'otojsd-start.js'.
 ```
 
