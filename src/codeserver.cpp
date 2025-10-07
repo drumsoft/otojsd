@@ -147,7 +147,7 @@ bool codeserver_start(codeserver *self) {
 	if (listen(self->listen_fd, SOMAXCONN) < 0) {
 		codeserver__error(self, "listen failed."); return false;
 	}
-	printf("codeserver start listening port %d.\n" , self->port);
+	logger::log(std::format("codeserver start listening port {}.", self->port));
 	return true;
 }
 
@@ -157,7 +157,7 @@ void codeserver_stop(codeserver *self) {
 		free((void *)self->document_root);
 	}
 	free(self);
-	printf("codeserver stop.\n");
+	logger::log("codeserver stop.");
 }
 
 bool codeserver_run(codeserver *self) {
@@ -181,7 +181,7 @@ bool codeserver_run(codeserver *self) {
 		codeserver__error(self, "accept failed."); return false;
 	}
 
-	printf("client %s: ", inet_ntoa(caddr.sin_addr) );
+	logger::log(std::format("request from {}", inet_ntoa(caddr.sin_addr)));
 	if ( ! codeserver__check_client_ip( self, &caddr ) ) {
 		codeserver__respond(conn_fd, 403, "accessed denied.", "client from forbidden address.");
 		if ( close(conn_fd) < 0) {
@@ -224,7 +224,7 @@ bool codeserver_run(codeserver *self) {
 		goto RETURN_AFTER_CLOSE;
 	}
 	request = codeserver_text_join(cstext);
-	printf("%d bytes request received.\n", cstext->size);
+	logger::log(std::format("{} bytes request received.", cstext->size));
 	codeserver_text_destroy(cstext);
 
 	method = codeserver__get_http_method(request);
@@ -239,7 +239,7 @@ bool codeserver_run(codeserver *self) {
 			codeserver__respond(conn_fd, 400, "bad request format.", "failed to parse request path.");
 			goto RETURN_AFTER_CLOSE;
 		}
-		printf("GET %s\n", path);
+		logger::log(std::format("GET {}", path));
 		if (!codeserver__is_safe_path(path)) {
 			codeserver__respond(conn_fd, 403, "forbidden.", "unsafe path requested.");
 			goto RETURN_AFTER_CLOSE;
@@ -253,7 +253,7 @@ bool codeserver_run(codeserver *self) {
 		if (codestart != NULL) {
 			codestart += 4;
 			if ( self->verbose )
-				printf("[CODE START]\n%s\n[CODE END]\n", codestart);
+				logger::log(std::format("[CODE START]\n{}\n[CODE END]", codestart));
 			ret = self->callback(codestart);
 			ret_allocated = true;
 		}else{
@@ -525,6 +525,6 @@ bool codeserver__serve_file(codeserver *self, int conn_fd, const char *path) {
 	}
 
 	close(file_fd);
-	printf("served file: %s (%lld bytes)\n", full_path, (long long)file_stat.st_size);
+	logger::log(std::format("served file: {} ({} bytes)", (const char *)full_path, (long long)file_stat.st_size));
 	return true;
 }

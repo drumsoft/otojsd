@@ -150,10 +150,13 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 	} else {
 		has_runtime_error = false;
 		int i = 0;
+		Float32 level = 0;
 		if (ar) {
 			for (frame = 0; frame < frames; frame++) {
 				for (channel = 0; channel < channels; channel++) {
-					recordBuffer[channel] = ((Float32 *)( outbuf[channel].mData ))[frame] = inoutbuf[i++];
+					Float32 val = inoutbuf[i++];
+					recordBuffer[channel] = ((Float32 *)( outbuf[channel].mData ))[frame] = val;
+					if (level < fabs(val)) { level = fabs(val); }
 					if (i >= result.count) break;
 				}
 				AiffRecorder_write32bit(ar, (uint32_t *)recordBuffer, 1);
@@ -161,11 +164,14 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 		} else {
 			for (frame = 0; frame < frames; frame++) {
 				for (channel = 0; channel < channels; channel++) {
-					((Float32 *)( outbuf[channel].mData ))[frame] = inoutbuf[i++];
+					Float32 val = inoutbuf[i++];
+					((Float32 *)( outbuf[channel].mData ))[frame] = val;
+					if (level < fabs(val)) { level = fabs(val); }
 					if (i >= result.count) break;
 				}
 			}
 		}
+		logger::levelmeter(level);
 	}
 
 	delete[] inoutbuf;
