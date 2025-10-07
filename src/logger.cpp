@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -139,11 +140,15 @@ static const std::string COLOR_GREEN = "\033[32m";
 static const std::string COLOR_YELLOW = "\033[33m";
 static const std::string COLOR_RED = "\033[31m";
 static const std::string COLOR_RESET = "\033[0m";
+static const float DB_MINIMUM = std::numeric_limits<float>::lowest();
 static bool levelmeter_displayed = false;
 static int screen_width = 0;
 static int meter_width = 0;
 static int meter_width_green = 0;
 static int meter_width_yellow = 0;
+static float last_level = DB_MINIMUM;
+static auto last_level_update = std::chrono::high_resolution_clock::now();
+static int last_level_phase = 0; // 0: fall, 1: hold
 
 void clear_levelmeter_if_needed() {
     if (levelmeter_displayed) {
@@ -173,39 +178,59 @@ void update_terminal_width() {
 void print_meter_line(float level) {
     std::string meter;
     meter.reserve(meter_width + 50);
-    float db_level = level <= 0.0 ? -100.0f : 20.0 * std::log10(level);
-    if (meter_width >= 3) {
-        int length = std::clamp<int>(std::round(meter_width * (db_level + 60.0f) / 66.0f), 0, meter_width);
-        meter += "[";
-        if (length <= 0) {
-        } else if (length <= meter_width_green) {
-            meter += COLOR_GREEN + std::string(length, '*');
-        } else if (length <= meter_width_yellow) {
-            meter += COLOR_GREEN + std::string(meter_width_green, '*');
-            meter += COLOR_YELLOW + std::string(length - meter_width_green, '*');
-        } else {
-            meter += COLOR_GREEN + std::string(meter_width_green, '*');
-            meter += COLOR_YELLOW + std::string(meter_width_yellow - meter_width_green, '*');
-            meter += COLOR_RED + std::string(length - meter_width_yellow, '*');
+    float db_level = level <= 0.0 ? DB_MINIMUM : 20.0 * std::log10(level);
+    if (db_level >= last_level) {
+        last_level = db_level;
+        last_level_phase = 1;
+        last_level_update = std::chrono::high_resolution_clock::now();
+    } else {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_level_update).count();
+        switch (last_level_phase) {
+        case 0:
+            if (last_level < -99.9) {
+                last_level = db_level;
+            } else {
+                last_level -= elapsed * 60 / 1000.0f;
+            }
+            last_level_update = std::chrono::high_resolution_clock::now();
+            break;
+        case 1:
+            if (elapsed >= 1000) {
+                last_level_phase = 0;
+                last_level_update = std::chrono::high_resolution_clock::now();
+            }
+            break;
         }
-        meter += COLOR_RESET + std::string(meter_width - length, ' ') + "]";
+    }
+    if (meter_width >= 3) {
+        int current = std::clamp<int>(std::round(meter_width * (db_level + 60.0f) / 66.0f), 0, meter_width);
+        int last = std::clamp<int>(std::round(meter_width * (last_level + 60.0f) / 66.0f), 0, meter_width);
+        std::string temp = std::string(current, '*') + std::string(meter_width - current, ' ');
+        if (current <= meter_width_yellow) {
+            temp.replace(meter_width_yellow, 1, "|");
+        }
+        if (last > 0) {
+            temp.replace(last - 1, 1, ">");
+        }
+        meter = "[" + COLOR_GREEN + temp.substr(0, meter_width_green) + COLOR_YELLOW + temp.substr(meter_width_green, meter_width_yellow - meter_width_green) + COLOR_RED + temp.substr(meter_width_yellow) + COLOR_RESET + "]";
     }
     if (screen_width > 6) {
-        if (level == 0.0f) {
+        if (last_level == DB_MINIMUM) {
             meter += COLOR_GREEN + " -Inf ";
-        } else if (db_level < -99.9f) {
+        } else if (last_level < -99.9f) {
             meter += COLOR_GREEN + "<-99.9";
-        } else if (db_level <= 99.9f) {
-            if (db_level < -6.0f) {
+        } else if (last_level <= 99.9f) {
+            if (last_level < -6.0f) {
                 meter += COLOR_GREEN;
-            } else if (db_level < 0.0f) {
+            } else if (last_level < 0.0f) {
                 meter += COLOR_YELLOW;
             } else {
                 meter += COLOR_RED;
             }
-            meter += std::format(" {:5.1f}", db_level);
+            meter += std::format(" {:5.1f}", last_level);
         } else {
-            meter += COLOR_RED + "> 99.9";
+            meter += COLOR_RED + " >99.9";
         }
         meter += COLOR_RESET;
     }
