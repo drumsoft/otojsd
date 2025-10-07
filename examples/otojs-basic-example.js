@@ -62,7 +62,11 @@ function calc_swing(tick) {
 }
 
 function overdrive(x) {
-    return 1 - Math.exp(x);
+    if (x >= 0) {
+        return 1 - Math.exp(-x);
+    } else {
+        return Math.exp(x) - 1;
+    }
 }
 
 var synth_delay = Otojs.fx.reverb_random(0.25 * 0.75, 0.25, 100, 0.20);
@@ -73,11 +77,11 @@ function oto_render(frames, channels, input_array) {
         let tick = ticker();
         let swing = 0.4 * calc_swing(tick);
 
-        let v0 = overdrive(0.60 * kick(tick - swing));
-        let v1 = overdrive(0.60 * bass(tick - swing));
-        let v2 = overdrive(0.50 * synth(tick - swing * 0.7));
+        let v0 = overdrive(0.40 * kick(tick - swing));
+        let v1 = overdrive(0.70 * bass(tick - swing));
+        let v2 = overdrive(0.40 * synth(tick - swing * 0.7));
 
-        let v = 0.25 * v0 + 0.2 * v1 + 0.25 * v2 + 0.25 * synth_delay(v2);
+        let v = 0.33 * v0 + 0.15 * v1 + 0.23 * v2 + 0.23 * synth_delay(v2);
 
         for (let c = 0; c < channels; c++) {
             output[f * channels + c] = v;
