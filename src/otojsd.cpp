@@ -54,7 +54,7 @@ bool input_enabled;
 
 bool level_meter_enabled = false;
 
-void otojsd_start(otojsd_options *options, const char *start_code, const char *exec_path, char **env) {
+void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes, const char *exec_path, char **env) {
 	logger::log(std::format("otojsd - Otojs sound server - port: {}, allowed clients: {}.", options->port, options->allow_pattern));
 	if (strcmp(options->allow_pattern, OTOJSD_DEFAULT_IPMASK) != 0) {
 		logger::warn("Otojsd will run code sent from other devices.");
@@ -78,11 +78,14 @@ void otojsd_start(otojsd_options *options, const char *start_code, const char *e
 
 	se = new ScriptEngine(exec_path);
 	se->setGlobalVariable("sample_rate", options->sample_rate);
-	logger::log(std::format("server start with {}.", start_code));
-	const char *error_message = se->executeFromFile(start_code);
-	if (error_message) {
-		logger::error(error_message);
-		delete error_message;
+
+	for (std::string code : start_codes) {
+		logger::log(std::format("loading start code: {}.", code));
+		const char *error_message = se->executeFromFile(code.c_str());
+		if (error_message) {
+			logger::error(error_message);
+			delete error_message;
+		}
 	}
 
 	has_runtime_error = false;

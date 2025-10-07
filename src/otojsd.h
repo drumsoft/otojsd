@@ -20,6 +20,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string>
+#include <vector>
+
 typedef struct {
 	int port;
 	bool findfreeport;
@@ -48,6 +51,6 @@ typedef struct {
 	false\
 }
 
-void otojsd_start(otojsd_options *options, const char *start_code, const char *exec_path, char **env);
+void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes, const char *exec_path, char **env);
 
 #endif

@@ -23,6 +23,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <string>
+#include <vector>
+
 #include "otojsd.h"
 #include "const.h"
 
@@ -89,9 +92,16 @@ int main(int argc, char **argv, char **env) {
 		}
 	}
 
-	const char *start_code = optind < argc ? argv[optind] : OTOJSD_DEFAULT_STARTCODE;
+	std::vector<std::string> start_codes;
+	if (optind < argc) {
+		for (int i = optind; i < argc; i++) {
+			start_codes.push_back(argv[i]);
+		}
+	} else {
+		start_codes.push_back(OTOJSD_DEFAULT_STARTCODE);
+	}
 
-	otojsd_start(&options, start_code, argv[0], env);
+	otojsd_start(&options, start_codes, argv[0], env);
 
 	return 0;
 }

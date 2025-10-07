@@ -88,7 +88,7 @@ Please also check the examples directory.
 otojsd supports all launch options from [otoperld](https://github.com/drumsoft/OtoPerl) (it should).
 
 ```
-otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_number] [-i] [-d path/to/document_root] [filename]
+otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_number] [-i] [-d path/to/document_root] [filename ...]
  -v, --verbose       be verbose.
  -c, --channel 2     Number of channels otojsd generate. default is 2.
  -r, --rate 48000    Sampling rate of the sound otojsd generate. default is 48000.
@@ -102,7 +102,7 @@ otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_numbe
  -i, --enable-input  Enables an audio input (from Default Input Device)
  -d, --document-root The path to the content returned when otojsd is accessed via GET method.
  -l, --level-meter   Enables level meter.
- filename            a Javascript file ran when server launched. default is 'otojsd-start.js'.
+ filenames           a Javascript files ran when server launched. default is 'otojsd-start.js'.
 ```
 
 otojsc script has some options.
