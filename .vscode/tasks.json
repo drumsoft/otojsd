@@ -1,46 +1,52 @@
 {
-    "tasks": [
-        {
-            "type": "process",
-            "label": "build",
-            "command": "cmake",
-            "args": ["--build", "build"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "type": "shell",
-            "label": "Post file to the server",
-            "command": "curl",
-            "args": [
-                "-s", "-X", "POST",
-                "http://localhost:14609",
-                "--data-binary", "@${relativeFile}",
-                "1>&2"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "type": "shell",
-            "label": "Post selection to the server",
-            "command": "curl",
-            "args": [
-                "-s", "-X", "POST",
-                "http://localhost:14609",
-                "--data-binary", "'${selectedText}'",
-                "1>&2"
-            ],
-            "problemMatcher": []
-        }
-    ],
-    "version": "2.0.0"
+  "tasks": [
+    {
+      "type": "process",
+      "label": "build",
+      "command": "cmake",
+      "args": ["--build", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "type": "shell",
+      "label": "Post file to the server",
+      "command": "curl",
+      "args": [
+        "-s",
+        "-X",
+        "POST",
+        "http://localhost:14609",
+        "--data-binary",
+        "@${relativeFile}",
+        "1>&2"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "Post selection to the server",
+      "command": "curl",
+      "args": [
+        "-s",
+        "-X",
+        "POST",
+        "http://localhost:14609",
+        "--data-binary",
+        "'${selectedText}'",
+        "1>&2"
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "version": "2.0.0"
 }

@@ -1,15 +1,14 @@
 {
-    "configurations": [
-        {
-            "name": "Run",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/otojsd",
-            "args": [
-            ],
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "build",
-        }
-    ],
-    "version": "2.0.0"
+  "configurations": [
+    {
+      "name": "Run",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/otojsd",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build"
+    }
+  ],
+  "version": "2.0.0"
 }
