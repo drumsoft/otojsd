@@ -25,11 +25,13 @@ void error(const char *message);
 void error(int number, const char **messages);
 void error(const std::string message);
 
-void assert(bool condition, const char *message);
-void assert(bool condition, int number, const char **messages);
-void assert(bool condition, const std::string message);
+void verify(bool condition, const char *message);
+void verify(bool condition, int number, const char **messages);
+void verify(bool condition, const std::string message);
 
 void levelmeter(float level);
+
+void dump(std::string_view message, size_t length, const unsigned char *data);
 
 } // namespace logger
 

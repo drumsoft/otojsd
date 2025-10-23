@@ -88,7 +88,7 @@ void callback_console_assert(const v8::FunctionCallbackInfo<v8::Value> &args) {
         messages[i] = strdup(*str);
     }
 
-    logger::assert(condition, args.Length() - 1, messages);
+    logger::verify(condition, args.Length() - 1, messages);
 
     for (int i = 0; i < args.Length() - 1; ++i) {
         free((void *)messages[i]);

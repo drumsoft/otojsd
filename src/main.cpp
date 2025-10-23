@@ -11,7 +11,7 @@
 #include "otojsd.h"
 #include "const.h"
 
-const char options_short[] = "p:fvc:r:a:o:id:l";
+const char options_short[] = "p:fvc:r:a:o:id:ls:";
 const struct option options_long[] = {
 	{ "port"   , required_argument, NULL, 'p' },
 	{ "findfreeport",  no_argument, NULL, 'f' },
@@ -23,6 +23,7 @@ const struct option options_long[] = {
 	{ "enable-input",  no_argument, NULL, 'i' },
 	{ "document-root", required_argument, NULL, 'd' },
 	{ "level-meter"  , no_argument, NULL, 'l' },
+	{ "midi-source"  , required_argument, NULL, 's' },
 };
 
 char errortext[256];
@@ -70,6 +71,9 @@ int main(int argc, char **argv, char **env) {
 				break;
 			case 'l':
 				options.level_meter = true;
+				break;
+			case 's':
+				options.midi_source = optarg;
 				break;
 		}
 	}

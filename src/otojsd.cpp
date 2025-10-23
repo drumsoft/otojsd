@@ -5,16 +5,19 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <pthread.h>
 #include <format>
+#include <vector>
 
 #include "otojsd.h"
 #include "script_engine.h"
 #include "codeserver.h"
 #include "audiounit.h"
 #include "aiffrecorder.h"
+#include "midi_receiver.h"
 
 // ------------------------------------------------------ private functions
 void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels);
 const char *script_code_liveeval(const char *code);
+void midi_receiving_callback(size_t length, const unsigned char *data);
 
 void otojsd__stop(int sig);
 
@@ -27,8 +30,13 @@ AiffRecorder *ar;
 float *recordBuffer;
 bool running = false;
 
+MidiReceiver *mr;
+
 pthread_mutex_t mutex_for_script_engine;
 pthread_cond_t cond_for_script_engine;
+
+pthread_mutex_t mutex_for_midi_receiver;
+std::vector<unsigned char> midi_receive_buffer = std::vector<unsigned char>();
 
 bool has_runtime_error;
 
@@ -73,6 +81,12 @@ void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes,
 	has_runtime_error = false;
 	audiounit_start(options->enable_input, options->channel, options->sample_rate, script_audio_callback);
 
+	if (options->midi_source) {
+		midi_receive_buffer.reserve(1024);
+		mr = new MidiReceiver(std::string(options->midi_source), midi_receiving_callback);
+		mr->connectDevices();
+	}
+
 	cs = codeserver_init(options->port, options->findfreeport, options->allow_pattern, options->verbose, options->document_root, script_code_liveeval);
 	running = codeserver_start(cs);
 	
@@ -89,6 +103,10 @@ void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes,
 	}
 	
 	codeserver_stop(cs);
+
+	if (mr) {
+		delete mr;
+	}
 
 	audiounit_stop();
 
@@ -127,8 +145,14 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 		}
 	}
 
+	pthread_mutex_lock( &mutex_for_midi_receiver );
+
 	// スクリプトエンジンで render() の実行（戻り値が count）
-	RenderResult result = se->executeRender(inoutbuf, frames, channels);
+	RenderResult result = se->executeRender(inoutbuf, frames, channels, mr ? &midi_receive_buffer : nullptr);
+
+	// MIDI 受信バッファをクリア
+	midi_receive_buffer.clear();
+	pthread_mutex_unlock( &mutex_for_midi_receiver );
 
 	// エラー時はエラーテキストを出力して has_runtime_error を true にセット
 	if (result.error) {
@@ -185,4 +209,10 @@ const char *script_code_liveeval(const char *code) {
     }
 
     return error_message;
+}
+
+void midi_receiving_callback(size_t length, const unsigned char *data) {
+	pthread_mutex_lock(&mutex_for_midi_receiver);
+	midi_receive_buffer.insert(midi_receive_buffer.end(), data, data + length);
+	pthread_mutex_unlock(&mutex_for_midi_receiver);
 }

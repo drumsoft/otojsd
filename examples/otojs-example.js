@@ -2,7 +2,7 @@
 
 // oto_render generates audio samples.
 // should return Float32Array(frames * channels).
-function oto_render(frames, channels, input_array) {
+function oto_render(frames, channels, input_array, midi_input) {
   let output = new Float32Array(frames * channels);
   for (let f = 0; f < frames; f++) {
     // sinewave oscillator 1 (110Hz)

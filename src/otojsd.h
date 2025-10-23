@@ -16,6 +16,7 @@ typedef struct {
 	bool enable_input;
 	const char *document_root;
 	bool level_meter;
+	const char *midi_source;
 } otojsd_options;
 
 #define OTOJSD_DEFAULT_IPMASK "127.0.0.1"
@@ -30,7 +31,8 @@ typedef struct {
 	NULL,\
 	false,\
 	NULL,\
-	false\
+	false,\
+	NULL\
 }
 
 void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes, const char *exec_path, char **env);

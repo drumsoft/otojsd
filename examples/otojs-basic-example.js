@@ -78,7 +78,7 @@ function overdrive(x) {
 
 var synth_delay = Otojs.fx.reverb_random(0.25 * 0.75, 0.25, 100, 0.2);
 
-function oto_render(frames, channels, input_array) {
+function oto_render(frames, channels, input_array, midi_input) {
   let output = new Float32Array(frames * channels);
   for (let f = 0; f < frames; f++) {
     let tick = ticker();

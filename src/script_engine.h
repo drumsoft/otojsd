@@ -4,6 +4,7 @@
 
 #include <libplatform/libplatform.h>
 #include <v8.h>
+#include <vector>
 
 struct RenderResult {
     // number if output samples (channels * frames);
@@ -38,7 +39,7 @@ public:
     const char *executeFromFile(const char *filename);
 
     // Call the render function with the given input buffer and return the output samples.
-    RenderResult executeRender(float *inoutbuf, unsigned int frames, unsigned int channels);
+    RenderResult executeRender(float *inoutbuf, unsigned int frames, unsigned int channels, const std::vector<unsigned char> *midi_in_buffer);
 
     // Set global variable.
     void setGlobalVariable(const char *name, double value);

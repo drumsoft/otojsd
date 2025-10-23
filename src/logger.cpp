@@ -112,21 +112,21 @@ void logger::error(const std::string message) {
     standard_error(message);
 }
 
-void logger::assert(bool condition, const char *message) {
+void logger::verify(bool condition, const char *message) {
     if (!condition) {
         clear_levelmeter_if_needed();
         std::cerr << "❌ ASSERTION FAILED: ";
         standard_error(message);
     }
 }
-void logger::assert(bool condition, int number, const char **messages) {
+void logger::verify(bool condition, int number, const char **messages) {
     if (!condition) {
         clear_levelmeter_if_needed();
         std::cerr << "❌ ASSERTION FAILED: ";
         standard_error(number, messages);
     }
 }
-void logger::assert(bool condition, const std::string message) {
+void logger::verify(bool condition, const std::string message) {
     if (!condition) {
         clear_levelmeter_if_needed();
         std::cerr << "❌ ASSERTION FAILED: ";
@@ -242,4 +242,20 @@ void logger::levelmeter(float level) {
     update_terminal_width();
     print_meter_line(level);
     levelmeter_displayed = true;
+}
+
+// Dump implementation
+
+void logger::dump(std::string_view message, size_t length, const unsigned char *data) {
+    size_t dump_size = length * 3 + 1;
+    char *dumped = new char[dump_size];
+    for (size_t i = 0; i < length; ++i) {
+        snprintf(dumped + i * 3, dump_size, "%02X ", data[i]);
+        dump_size -= 3;
+    }
+    dumped[length * 3 - 1] = '\0';
+
+    clear_levelmeter_if_needed();
+    std::cout << message << "(" << length << "): " << dumped << std::endl;
+    delete[] dumped;
 }

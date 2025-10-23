@@ -6,6 +6,25 @@
 #include "script_engine_console.h"
 #include "const.h"
 
+static const size_t umpSizeFromMessageType[] = {
+    4, // 0x0 Utility Messages
+    4, // 0x1 System Real Time and System Common Messages (except System Exclusive)
+    4, // 0x2 MIDI 1.0 Channel Voice Messages
+    8, // 0x3 Data Messages (including System Exclusive)
+    8, // 0x4 MIDI 2.0 Channel Voice Messages
+   16, // 0x5 Data Messages
+    4, // 0x6 Reserved
+    4, // 0x7 Reserved
+    8, // 0x8 Reserved
+    8, // 0x9 Reserved
+    8, // 0xA Reserved
+   12, // 0xB Reserved
+   12, // 0xC Reserved
+   16, // 0xD Flex Data Messages
+   16, // 0xE Reserved
+   16, // 0xF UMP Stream Messages
+};
+
 // internal functions prototypes
 const char *ToCString(const v8::String::Utf8Value &value);
 const char *ExecuteString(v8::Isolate *isolate, v8::Local<v8::Context> context, v8::Local<v8::String> source, v8::Local<v8::String> name);
@@ -111,7 +130,9 @@ const char *ScriptEngine::executeFromFile(const char *filename) {
 }
 
 // Call the render function with the given input buffer and return the output samples.
-RenderResult ScriptEngine::executeRender(float *inoutbuf, unsigned int frames, unsigned int channels) {
+RenderResult ScriptEngine::executeRender(float *inoutbuf, unsigned int frames, unsigned int channels, const std::vector<unsigned char> *midi_in_buffer) {
+    static const v8::Local<v8::Value> undefined = v8::Undefined(this->isolate_);
+
     RenderResult result = {0, nullptr};
 
     v8::Isolate::Scope isolate_scope(this->isolate_);
@@ -121,12 +142,14 @@ RenderResult ScriptEngine::executeRender(float *inoutbuf, unsigned int frames, u
 
     v8::TryCatch try_catch(this->isolate_);
 
-    // create arguments for render(frames, channels, input_array)
-    const int argc = 3;
+    // create arguments for render
+    const int argc = 4;
+    // argv[0] frames
     v8::Local<v8::Number> frames_arg = v8::Number::New(this->isolate_, frames);
+    // argv[1] channels
     v8::Local<v8::Number> channels_arg = v8::Number::New(this->isolate_, channels);
+    // argv[2] input buffer
     v8::Local<v8::Float32Array> input_array;
-    v8::Local<v8::Primitive> undefined = v8::Undefined(this->isolate_);
     if (inoutbuf) {
         size_t byte_length = frames * channels * sizeof(float);
         v8::Local<v8::ArrayBuffer> array_buffer = v8::ArrayBuffer::New(isolate_, byte_length);
@@ -134,10 +157,33 @@ RenderResult ScriptEngine::executeRender(float *inoutbuf, unsigned int frames, u
         memcpy(buffer_data, inoutbuf, byte_length);
         input_array = v8::Float32Array::New(array_buffer, 0, frames * channels);
     }
+    // argv[3] midi input buffer
+    v8::Local<v8::Array> midi_packets;
+    size_t midi_in_size = midi_in_buffer ? midi_in_buffer->size() : 0;
+    if (midi_in_size) {
+        const unsigned char *midi_in_data = midi_in_buffer->data();
+        midi_packets = v8::Array::New(this->isolate_, 1);
+        uint32_t index = 0;
+        for (const unsigned char *cur = midi_in_data; cur < midi_in_data + midi_in_size; ) {
+            size_t packet_size = umpSizeFromMessageType[(*cur >> 4) & 0x0F];
+            if (cur + packet_size > midi_in_data + midi_in_size) {
+                // malformed packet, break
+                break;
+            }
+            v8::Local<v8::ArrayBuffer> array_buffer = v8::ArrayBuffer::New(isolate_, packet_size);
+            void* buffer_data = array_buffer->GetBackingStore()->Data();
+            memcpy(buffer_data, cur, packet_size);
+            v8::Local<v8::Uint8Array> packet = v8::Uint8Array::New(array_buffer, 0, packet_size);
+            midi_packets->Set(local_context, index++, packet).FromJust();
+            cur += packet_size;
+        }
+    }
+    // pack into argv
     v8::Local<v8::Value> argv[argc] = {
         frames_arg,
         channels_arg,
-        inoutbuf ? (v8::Local<v8::Value>)input_array : (v8::Local<v8::Value>)undefined
+        inoutbuf ? (v8::Local<v8::Value>)input_array : undefined,
+        midi_in_size ? (v8::Local<v8::Value>)midi_packets : undefined
     };
 
     // call render()

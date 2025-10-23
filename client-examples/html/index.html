@@ -173,7 +173,7 @@
     <div class="code-panel">
         <textarea id="codeEditor">
 // oto_render should return Float32Array(frames * channels).
-function oto_render(frames, channels, input_array) {
+function oto_render(frames, channels, input_array, midi_input) {
     let output = new Float32Array(frames * channels);
     for (let f = 0; f &lt; frames; f++) {
         let v = 0.5 * Math.sin( 3.1415 * 2 * frame * 440 / sample_rate );

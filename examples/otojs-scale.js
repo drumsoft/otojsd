@@ -47,7 +47,7 @@ function create_delay(length, feedback) {
 var delay1 = create_delay(frames_16th * 3, 0.3);
 var delay2 = create_delay(frames_16th * 3, 0.3);
 
-function oto_render(frames, channels, input_array) {
+function oto_render(frames, channels, input_array, midi_input) {
   let output = new Float32Array(frames * channels);
   for (let f = 0; f < frames; f++) {
     let [v1l, v1r] = osc1(frame);

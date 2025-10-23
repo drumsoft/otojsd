@@ -14,7 +14,7 @@ bass_mml.score(
   true
 );
 
-function oto_render(frames, channels, input_array) {
+function oto_render(frames, channels, input_array, midi_input) {
   let output = new Float32Array(frames * channels);
   for (let f = 0; f < frames; f++) {
     let tick = ticker();

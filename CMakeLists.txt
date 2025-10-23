@@ -13,7 +13,7 @@ set(CODESIGN_IDENTITY "Developer ID Application" CACHE STRING "Code signing iden
 set(APP otojsd)
 
 # source files
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/*.mm")
 
 # default build type is Release
 if(NOT CMAKE_BUILD_TYPE)
@@ -44,6 +44,7 @@ target_link_libraries(${APP}
   "-framework CoreFoundation"
   "-framework CoreAudio"
   "-framework AudioUnit"
+  "-framework CoreMIDI"
 )
 
 # change compile options for Debug build

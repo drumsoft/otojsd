@@ -20,7 +20,7 @@ var delay = [
   create_delay(0.75 * sample_rate, 0.6),
 ];
 
-function oto_render(frames, channels, input_array) {
+function oto_render(frames, channels, input_array, midi_input) {
   let output = new Float32Array(frames * channels);
   let input_channels = input_array.length / frames;
   for (let f = 0; f < frames; f++) {
