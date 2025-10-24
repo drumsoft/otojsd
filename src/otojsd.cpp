@@ -65,6 +65,7 @@ void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes,
 
 	pthread_mutex_init( &mutex_for_script_engine , NULL );
 	pthread_cond_init( &cond_for_script_engine, NULL );
+	pthread_mutex_init( &mutex_for_midi_receiver , NULL );
 
 	se = new ScriptEngine(exec_path);
 	se->setGlobalVariable("sample_rate", options->sample_rate);
