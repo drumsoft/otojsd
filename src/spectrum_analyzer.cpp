@@ -14,6 +14,11 @@ static const int DISPLAY_MAX_WIDTH = 140;
 static const int DISPLAY_MAX_HEIGHT = 20;
 static const double DISPLAY_DB_MIN = -60.0;
 
+void *thread_function(void* arg) {
+    ((SpectrumAnalyzer *)arg)->thread_loop();
+    return NULL;
+}
+
 // private methods
 
 void SpectrumAnalyzer::calculate_fft(int buffer_index) {
@@ -80,9 +85,17 @@ void SpectrumAnalyzer::copy_with_mix(double *dest, const float *src, unsigned in
 SpectrumAnalyzer::SpectrumAnalyzer(void (*result_callback)(SpectrumAnalyzer *sa)) {
     result_callback_ = result_callback;
     display_.reserve(DISPLAY_MAX_HEIGHT * (DISPLAY_MAX_WIDTH + 5) + 10);
+
+    pthread_mutex_init(&this->mutex_, NULL);
+    pthread_cond_init(&this->cond_, NULL);
+    pthread_create(&this->thread_, NULL, thread_function, this);
 };
 
 SpectrumAnalyzer::~SpectrumAnalyzer() {
+    pthread_detach(this->thread_);
+    pthread_mutex_destroy(&this->mutex_);
+    pthread_cond_destroy(&this->cond_);
+
     for (int i = 0; i < 2; i++) {
         if (this->input_buffers_[i]) {
             delete[] this->input_buffers_[i];
@@ -123,20 +136,23 @@ void SpectrumAnalyzer::process(const float *input_buffer, unsigned int frames, u
     this->buffer_cur_ += copy_size;
     if (this->buffer_cur_ >= this->process_size_) {
         // switch buffers & process FFT
-        int fft_index = this->current_buffer_index_;
+        pthread_mutex_lock(&this->mutex_);
         this->current_buffer_index_ = 1 - this->current_buffer_index_;
         // copy overlap data to the beginning of input_buffer
         int overlap_size = this->process_size_ - this->update_size_;
         if (overlap_size > 0) {
             memcpy(
                 &this->input_buffers_[this->current_buffer_index_][0],
-                &this->input_buffers_[fft_index][this->process_size_ - overlap_size],
+                &this->input_buffers_[1 - this->current_buffer_index_][this->process_size_ - overlap_size],
                 overlap_size * sizeof(double)
             );
             this->buffer_cur_ = overlap_size;
         } else {
             this->buffer_cur_ = 0;
         }
+        // process FFT on filled buffer
+        pthread_cond_signal(&this->cond_);
+        pthread_mutex_unlock(&this->mutex_);
         // copy rest of input_buffer
         int remaining_frames = frames - copy_size;
         if (remaining_frames > 0) {
@@ -147,8 +163,15 @@ void SpectrumAnalyzer::process(const float *input_buffer, unsigned int frames, u
             );
             this->buffer_cur_ += remaining_frames;
         }
-        // process FFT on filled buffer
-        this->calculate_fft(fft_index);
+    }
+}
+
+void SpectrumAnalyzer::thread_loop() {
+    while (1) {
+        pthread_mutex_lock(&this->mutex_);
+        pthread_cond_wait(&this->cond_, &this->mutex_);
+        this->calculate_fft(1 - this->current_buffer_index_);
+        pthread_mutex_unlock(&this->mutex_);
     }
 }
 

@@ -3,6 +3,7 @@
 // SpectrumAnalyzer - A class for analyzing audio spectrum.
 
 #include <string>
+#include <pthread.h>
 
 class SpectrumAnalyzer {
   private:
@@ -23,12 +24,18 @@ class SpectrumAnalyzer {
 
     std::string display_ = std::string();
 
+    pthread_t thread_;
+    pthread_mutex_t mutex_;
+    pthread_cond_t cond_;
+
     void calculate_fft(int buffer_index);
     void copy_with_mix(double *dest, const float *src, unsigned int frames, unsigned int channels);
 
   public:
     SpectrumAnalyzer(void (*result_callback)(SpectrumAnalyzer *sa));
     ~SpectrumAnalyzer();
+
+    void thread_loop();
 
     void initialize(unsigned int sample_rate, unsigned int updates_per_second);
     void process(const float *input_buffer, unsigned int frames, unsigned int channels);
