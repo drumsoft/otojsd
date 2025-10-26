@@ -28,7 +28,7 @@ You can generate these sound using JavaScript. Leveraging V8's speed, you should
 ### New features in Otojs
 
 * Simple HTTP server - Send code from clients created with HTML/JavaScript.
-* Level meter running in the Terminal.
+* Level meter and spectrum analyzer running in the Terminal.
 * MIDI input.
 * Visual effects for live coding by [code-splash](https://github.com/drumsoft/code-splash)
 * TypeScript support by [otojsc-vscode](https://github.com/drumsoft/otojsc-vscode)
