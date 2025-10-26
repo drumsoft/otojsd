@@ -10,8 +10,9 @@
 
 #include "otojsd.h"
 #include "const.h"
+#include "logger.h"
 
-const char options_short[] = "p:fvc:r:a:o:id:ls:";
+const char options_short[] = "p:fvc:r:a:o:id:lns:";
 const struct option options_long[] = {
 	{ "port"   , required_argument, NULL, 'p' },
 	{ "findfreeport",  no_argument, NULL, 'f' },
@@ -23,6 +24,7 @@ const struct option options_long[] = {
 	{ "enable-input",  no_argument, NULL, 'i' },
 	{ "document-root", required_argument, NULL, 'd' },
 	{ "level-meter"  , no_argument, NULL, 'l' },
+	{ "analyzer"     , no_argument, NULL, 'n' },
 	{ "midi-source"  , required_argument, NULL, 's' },
 };
 
@@ -72,10 +74,19 @@ int main(int argc, char **argv, char **env) {
 			case 'l':
 				options.level_meter = true;
 				break;
+			case 'n':
+				options.analyzer = true;
+				break;
 			case 's':
 				options.midi_source = optarg;
 				break;
 		}
+	}
+
+	// verify options
+	if (options.level_meter && options.analyzer) {
+		logger::error("Cannot use level meter and spectrum analyzer at the same time.");
+		return -1;
 	}
 
 	std::vector<std::string> start_codes;

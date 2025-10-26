@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "spectrum_analyzer.h"
+
 namespace logger {
 
 void log(const char *message);
@@ -32,6 +34,8 @@ void verify(bool condition, const std::string message);
 void levelmeter(float level);
 
 void dump(std::string_view message, size_t length, const unsigned char *data);
+
+void analyzer_output(SpectrumAnalyzer *sa);
 
 } // namespace logger
 

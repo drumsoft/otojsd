@@ -13,24 +13,28 @@
 #include "audiounit.h"
 #include "aiffrecorder.h"
 #include "midi_receiver.h"
+#include "spectrum_analyzer.h"
 
 // ------------------------------------------------------ private functions
 void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels);
 const char *script_code_liveeval(const char *code);
 void midi_receiving_callback(size_t length, const unsigned char *data);
+void spectrum_analyzer_callback(SpectrumAnalyzer *sa);
 
 void otojsd__stop(int sig);
 
 // ------------------------------------------------ otojsd implimentation
 
-ScriptEngine *se;
+ScriptEngine *se = nullptr;
 
-codeserver *cs;
-AiffRecorder *ar;
-float *recordBuffer;
+codeserver *cs = nullptr;
+AiffRecorder *ar = nullptr;
+float *recordBuffer = nullptr;
 bool running = false;
 
-MidiReceiver *mr;
+MidiReceiver *mr = nullptr;
+
+SpectrumAnalyzer *sa = nullptr;
 
 pthread_mutex_t mutex_for_script_engine;
 pthread_cond_t cond_for_script_engine;
@@ -88,6 +92,11 @@ void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes,
 		mr->connectDevices();
 	}
 
+	if (options->analyzer) {
+		sa = new SpectrumAnalyzer(spectrum_analyzer_callback);
+		sa->initialize(options->sample_rate, 30);
+	}
+
 	cs = codeserver_init(options->port, options->findfreeport, options->allow_pattern, options->verbose, options->document_root, script_code_liveeval);
 	running = codeserver_start(cs);
 	
@@ -104,6 +113,10 @@ void otojsd_start(otojsd_options *options, std::vector<std::string> start_codes,
 	}
 	
 	codeserver_stop(cs);
+
+	if (sa) {
+		delete sa;
+	}
 
 	if (mr) {
 		delete mr;
@@ -185,6 +198,9 @@ void script_audio_callback(AudioBuffer *outbuf, UInt32 frames, UInt32 channels) 
 				}
 			}
 		}
+		if (sa) {
+			sa->process(inoutbuf, frames, channels);
+		}
 		if (level_meter_enabled) {
 			logger::levelmeter(level);
 		}
@@ -216,4 +232,8 @@ void midi_receiving_callback(size_t length, const unsigned char *data) {
 	pthread_mutex_lock(&mutex_for_midi_receiver);
 	midi_receive_buffer.insert(midi_receive_buffer.end(), data, data + length);
 	pthread_mutex_unlock(&mutex_for_midi_receiver);
+}
+
+void spectrum_analyzer_callback(SpectrumAnalyzer *sa) {
+	logger::analyzer_output(sa);
 }

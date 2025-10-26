@@ -16,6 +16,7 @@ typedef struct {
 	bool enable_input;
 	const char *document_root;
 	bool level_meter;
+	bool analyzer;
 	const char *midi_source;
 } otojsd_options;
 
@@ -31,6 +32,7 @@ typedef struct {
 	NULL,\
 	false,\
 	NULL,\
+	false,\
 	false,\
 	NULL\
 }

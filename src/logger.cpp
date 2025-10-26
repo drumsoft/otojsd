@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "logger.h"
+#include "const.h"
 
 void clear_levelmeter_if_needed();
 
@@ -134,14 +135,25 @@ void logger::verify(bool condition, const std::string message) {
     }
 }
 
+// screen status
+
+static bool levelmeter_displayed = false;
+static bool analyzer_displayed = false;
+
+void clear_levelmeter_if_needed() {
+    if (levelmeter_displayed) {
+        std::cout << "\033[0K" << std::flush;
+        levelmeter_displayed = false;
+    }
+    if (analyzer_displayed) {
+        std::cout << "\033[0K" << std::flush;
+        analyzer_displayed = false;
+    }
+}
+
 // Levelmeter implementation
 
-static const std::string COLOR_GREEN = "\033[32m";
-static const std::string COLOR_YELLOW = "\033[33m";
-static const std::string COLOR_RED = "\033[31m";
-static const std::string COLOR_RESET = "\033[0m";
 static const float DB_MINIMUM = std::numeric_limits<float>::lowest();
-static bool levelmeter_displayed = false;
 static int screen_width = 0;
 static int meter_width = 0;
 static int meter_width_green = 0;
@@ -149,13 +161,6 @@ static int meter_width_yellow = 0;
 static float last_level = DB_MINIMUM;
 static auto last_level_update = std::chrono::high_resolution_clock::now();
 static int last_level_phase = 0; // 0: fall, 1: hold
-
-void clear_levelmeter_if_needed() {
-    if (levelmeter_displayed) {
-        std::cout << "\033[0K" << std::flush;
-        levelmeter_displayed = false;
-    }
-}
 
 void update_terminal_width() {
     struct winsize w;
@@ -213,26 +218,37 @@ void print_meter_line(float level) {
         if (last > 0) {
             temp.replace(last - 1, 1, ">");
         }
-        meter = "[" + COLOR_GREEN + temp.substr(0, meter_width_green) + COLOR_YELLOW + temp.substr(meter_width_green, meter_width_yellow - meter_width_green) + COLOR_RED + temp.substr(meter_width_yellow) + COLOR_RESET + "]";
+        meter += "[";
+        meter += CHAR_COLOR_GREEN;
+        meter += temp.substr(0, meter_width_green);
+        meter += CHAR_COLOR_YELLOW;
+        meter += temp.substr(meter_width_green, meter_width_yellow - meter_width_green);
+        meter += CHAR_COLOR_RED;
+        meter += temp.substr(meter_width_yellow);
+        meter += CHAR_COLOR_RESET;
+        meter += "]";
     }
     if (screen_width > 6) {
         if (last_level == DB_MINIMUM) {
-            meter += COLOR_GREEN + " -Inf ";
+            meter += CHAR_COLOR_GREEN;
+            meter += " -Inf ";
         } else if (last_level < -99.9f) {
-            meter += COLOR_GREEN + "<-99.9";
+            meter += CHAR_COLOR_GREEN;
+            meter += "<-99.9";
         } else if (last_level <= 99.9f) {
             if (last_level < -6.0f) {
-                meter += COLOR_GREEN;
+                meter += CHAR_COLOR_GREEN;
             } else if (last_level < 0.0f) {
-                meter += COLOR_YELLOW;
+                meter += CHAR_COLOR_YELLOW;
             } else {
-                meter += COLOR_RED;
+                meter += CHAR_COLOR_RED;
             }
             meter += std::format(" {:5.1f}", last_level);
         } else {
-            meter += COLOR_RED + " >99.9";
+            meter += CHAR_COLOR_RED;
+            meter += " >99.9";
         }
-        meter += COLOR_RESET;
+        meter += CHAR_COLOR_RESET;
     }
     meter += "\033[0K\r";
     std::cout << meter << std::flush;
@@ -258,4 +274,18 @@ void logger::dump(std::string_view message, size_t length, const unsigned char *
     clear_levelmeter_if_needed();
     std::cout << message << "(" << length << "): " << dumped << std::endl;
     delete[] dumped;
+}
+
+// Analyzer output implementation
+
+void logger::analyzer_output(SpectrumAnalyzer *sa) {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    int screen_width = w.ws_col > 0 ? w.ws_col : 80;
+    int screen_height = w.ws_row > 0 ? w.ws_row : 25;
+
+    const std::string *display = sa->render_display(screen_width - 4, screen_height / 2);
+    std::cout << *display << std::flush;
+
+    analyzer_displayed = true;
 }

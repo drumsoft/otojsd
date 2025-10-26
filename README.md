@@ -115,6 +115,8 @@ otojsd [-v] [-c channels] [-r sample_rate] [-a allowed_addresses] [-p port_numbe
  -i, --enable-input  Enables an audio input (from Default Input Device)
  -d, --document-root The path to the content returned when otojsd is accessed via GET method.
  -l, --level-meter   Enables level meter.
+ -n, --analyzer      Enables spectrum analyzer.
+ 　　　　　　　　　　　　The level meter and spectrum analyzer cannot be used simultaneously.
  -s, --midi-source "Keyboard" Enables MIDI In and specify the name of the source device to connect.
                               ex: "Yamaha" to connect any Yamaha devices.
 							      "nanoKONTROL2" to connect KORG nanoKONTROL2.

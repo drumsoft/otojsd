@@ -5,7 +5,7 @@
       "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/build/otojsd",
-      "args": [],
+      "args": ["-v", "-f", "-n", "otojsd-start.js", "../otojsc-vscode/dist/examples/otojs-basic.js", "../otojsc-vscode/dist/examples/otojs-basic-example.js"],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build"
     }
