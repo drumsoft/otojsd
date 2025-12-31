@@ -8,6 +8,8 @@ Otojs は JavaScript でリアルタイムサウンド生成を行うプログ�
 
 otojsd はそのサウンド生成を担うサーバーです。
 
+Demo video!! "[\[Otojs\] Making a rhythm machine in JavaScript](https://www.youtube.com/watch?v=sqMRF6eonEQ)"
+
 ## What is this?
 
 a JavaScript version of [OtoPerl](https://github.com/drumsoft/OtoPerl)'s otoperld.
